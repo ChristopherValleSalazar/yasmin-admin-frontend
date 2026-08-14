@@ -1,0 +1,245 @@
+:root {
+  --bg: #f6f4f1;
+  --surface: #ffffff;
+  --border: #e4dfd8;
+  --text: #23201d;
+  --muted: #7a726a;
+  --accent: #8a5a44;
+  --accent-hover: #714836;
+  --good-bg: #edf7ef;
+  --good-text: #256b39;
+  --bad-bg: #fdeeee;
+  --bad-text: #a32c2c;
+  --warn-bg: #fdf4e3;
+  --warn-text: #8a6116;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(35, 32, 29, .06), 0 8px 24px rgba(35, 32, 29, .06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #191715;
+    --surface: #232120;
+    --border: #37332f;
+    --text: #f1ede8;
+    --muted: #a49a90;
+    --accent: #c98a6b;
+    --accent-hover: #d89a7c;
+    --good-bg: #1c2f22;
+    --good-text: #7fce97;
+    --bad-bg: #33201f;
+    --bad-text: #f0918d;
+    --warn-bg: #322a17;
+    --warn-text: #e4bb66;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* A display rule on a class outranks the UA stylesheet's [hidden] { display:
+   none }, so pages that toggle .hidden panels need this to stay authoritative. */
+[hidden] { display: none !important; }
+
+body.page {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.page--centered {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+/* Card ------------------------------------------------------------------- */
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.card--wide { max-width: 640px; }
+
+.card__header { margin-bottom: 24px; }
+
+.card__header h1 {
+  margin: 4px 0 6px;
+  font-size: 1.5rem;
+  letter-spacing: -.01em;
+}
+
+.card__header p { margin: 0; }
+
+.card__footer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.muted { color: var(--muted); }
+.small { font-size: .8125rem; }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .8125rem;
+  word-break: break-all;
+}
+
+/* Form ------------------------------------------------------------------- */
+
+.form { display: grid; gap: 16px; }
+
+.field { display: grid; gap: 6px; }
+
+.field label {
+  font-size: .875rem;
+  font-weight: 550;
+}
+
+.field input {
+  padding: 10px 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.button {
+  padding: 11px 16px;
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+
+.button:hover:not(:disabled) { background: var(--accent-hover); }
+.button:disabled { opacity: .6; cursor: default; }
+
+.button--ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.button--ghost:hover:not(:disabled) { background: var(--bg); }
+
+/* Messages --------------------------------------------------------------- */
+
+.alert,
+.banner {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: .875rem;
+}
+
+.alert { margin: 4px 0 0; }
+
+.alert--error,
+.banner--error { background: var(--bad-bg); color: var(--bad-text); }
+
+.alert--success,
+.banner--success { background: var(--good-bg); color: var(--good-text); }
+
+.banner--warning { background: var(--warn-bg); color: var(--warn-text); }
+
+/* Dashboard -------------------------------------------------------------- */
+
+.checking {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  color: var(--muted);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.stack {
+  display: grid;
+  gap: 20px;
+  max-width: 640px;
+  margin: 32px auto;
+  padding: 0 24px;
+}
+
+.hello {
+  margin: 0 0 8px;
+  font-size: 1.875rem;
+  letter-spacing: -.02em;
+}
+
+.section-title {
+  margin: 0 0 16px;
+  font-size: 1rem;
+}
+
+.diagnostics {
+  display: grid;
+  grid-template-columns: minmax(140px, auto) 1fr;
+  gap: 10px 20px;
+  margin: 0 0 16px;
+  font-size: .875rem;
+}
+
+.diagnostics dt { color: var(--muted); }
+.diagnostics dd { margin: 0; }
+
+.pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: .8125rem;
+  font-weight: 550;
+}
+
+.pill--good { background: var(--good-bg); color: var(--good-text); }
+.pill--bad { background: var(--bad-bg); color: var(--bad-text); }
+.pill--neutral { background: var(--bg); color: var(--muted); }
+
+.stack .button--ghost { justify-self: start; }
+
+@media (max-width: 520px) {
+  .diagnostics { grid-template-columns: 1fr; gap: 4px 0; }
+  .diagnostics dd { margin-bottom: 8px; }
+}

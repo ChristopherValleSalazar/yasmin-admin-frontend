@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Dashboard · Yasmin Beauty Admin</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="page">
+    <!-- Nothing below is shown until the server confirms the session cookie. -->
+    <div id="checking" class="checking" role="status">Checking your session…</div>
+
+    <div id="content" hidden>
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">Yasmin Beauty</p>
+                <strong>Admin</strong>
+            </div>
+            <button id="logout" class="button button--ghost" type="button">Sign out</button>
+        </header>
+
+        <main class="stack">
+            <section class="card card--wide">
+                <h1 class="hello">Hello, world 👋</h1>
+                <p class="muted">
+                    You are signed in. This page is only reachable while the backend accepts
+                    your <code>admin_token</code> cookie.
+                </p>
+            </section>
+
+            <section class="card card--wide" aria-labelledby="diag-title">
+                <h2 id="diag-title" class="section-title">Cookie check</h2>
+
+                <dl class="diagnostics">
+                    <dt>Protected request</dt>
+                    <dd><code id="diag-endpoint"></code></dd>
+
+                    <dt>Response</dt>
+                    <dd><span id="diag-status" class="pill"></span></dd>
+
+                    <dt>Readable by JavaScript</dt>
+                    <dd><span id="diag-jscookie" class="pill"></span></dd>
+                </dl>
+
+                <p id="diag-verdict" class="alert" role="status"></p>
+
+                <button id="recheck" class="button button--ghost" type="button">Re-check session</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

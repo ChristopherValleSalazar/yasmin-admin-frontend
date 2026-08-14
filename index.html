@@ -3,9 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta name="referrer" content="no-referrer">
+    <title>Sign in · Yasmin Beauty Admin</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
-    <h1>HELLO WORLD</h1>
+<body class="page page--centered">
+    <main class="card" aria-labelledby="login-title">
+        <header class="card__header">
+            <p class="eyebrow">Yasmin Beauty</p>
+            <h1 id="login-title">Admin sign in</h1>
+            <p class="muted">Sign in with your administrator email and password.</p>
+        </header>
+
+        <p id="banner" class="banner" role="status" hidden></p>
+
+        <form id="login-form" class="form">
+            <div class="field">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" autocomplete="username"
+                       placeholder="admin@yasminbeauty.salon" required autofocus>
+            </div>
+
+            <div class="field">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password"
+                       autocomplete="current-password" required>
+            </div>
+
+            <p id="error" class="alert alert--error" role="alert" hidden></p>
+
+            <button id="submit" class="button" type="submit">Sign in</button>
+        </form>
+
+        <footer class="card__footer">
+            <span class="muted small">API</span>
+            <code id="api-base" class="small"></code>
+        </footer>
+    </main>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/login.js"></script>
 </body>
 </html>
