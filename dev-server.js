@@ -11,15 +11,24 @@
  *   node dev-server.js
  *   PORT=3000 API_TARGET=http://localhost:9090 node dev-server.js
  *
+ * Reaching it on anything other than localhost needs TLS as well, because the
+ * cookie is Secure and a browser only accepts that over https:// or on
+ * localhost. Point CERT and KEY at a real certificate to serve HTTPS — on a
+ * tailnet, `tailscale cert <machine>.<tailnet>.ts.net` issues one:
+ *
+ *   CERT=machine.tailnet.ts.net.crt KEY=machine.tailnet.ts.net.key node dev-server.js
+ *
  * Requires no dependencies and no CORS configuration on the backend.
  */
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = Number(process.env.PORT || 5173);
 const API_TARGET = new URL(process.env.API_TARGET || 'http://localhost:8080');
 const ROOT = __dirname;
+const { CERT, KEY } = process.env;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -87,12 +96,23 @@ function serveStatic(req, res) {
   });
 }
 
-http
-  .createServer((req, res) => {
-    if (req.url.startsWith('/api/')) return proxy(req, res);
-    return serveStatic(req, res);
-  })
-  .listen(PORT, () => {
-    console.log(`Admin prototype   http://localhost:${PORT}`);
-    console.log(`Proxying /api/*   ${API_TARGET.origin}`);
-  });
+function handler(req, res) {
+  if (req.url.startsWith('/api/')) return proxy(req, res);
+  return serveStatic(req, res);
+}
+
+const server = CERT && KEY
+  ? https.createServer({ cert: fs.readFileSync(CERT), key: fs.readFileSync(KEY) }, handler)
+  : http.createServer(handler);
+
+server.listen(PORT, () => {
+  const scheme = CERT && KEY ? 'https' : 'http';
+  console.log(`Admin prototype   ${scheme}://localhost:${PORT}`);
+  console.log(`Proxying /api/*   ${API_TARGET.origin}`);
+  if (scheme === 'http') {
+    console.log(
+      '\nOpen it on localhost. Over plain HTTP the Secure session cookie is\n' +
+      'rejected on any other hostname — set CERT and KEY to serve HTTPS instead.',
+    );
+  }
+});

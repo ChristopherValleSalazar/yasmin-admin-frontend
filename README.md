@@ -21,10 +21,42 @@ Point it somewhere else with environment variables:
 
 ```bash
 PORT=3000 API_TARGET=http://localhost:9090 node dev-server.js
+CERT=host.crt KEY=host.key node dev-server.js      # serve over HTTPS
 ```
+
+Open it on `localhost`. Reaching it on any other hostname needs HTTPS — see
+[Reaching it from another machine](#reaching-it-from-another-machine).
 
 Because everything is same-origin, the backend needs no CORS configuration for
 local development at all.
+
+## Reaching it from another machine
+
+Opening the page on a LAN or tailnet address over plain HTTP will not work, and
+the failure is silent on the backend: login returns `204` and the browser throws
+the cookie away. Two separate rules bite at once.
+
+`admin_token` is `Secure`, and a browser only keeps Secure cookies on `https://`
+or on `localhost` / `127.0.0.1` / `[::1]`. Any other hostname over HTTP — a
+Tailscale `100.x.y.z`, a LAN `192.168.x.y`, a machine name — is not a secure
+context, so the cookie is discarded on arrival. `window.isSecureContext` in the
+console tells you which side of that line you are on.
+
+On a tailnet, serve the proxy over real TLS:
+
+```bash
+tailscale cert <machine>.<tailnet>.ts.net      # issues a real certificate
+CERT=<machine>.<tailnet>.ts.net.crt \
+KEY=<machine>.<tailnet>.ts.net.key \
+  node dev-server.js
+```
+
+Then open `https://<machine>.<tailnet>.ts.net:5173`. Or let Tailscale terminate
+TLS instead and keep the server plain: `node dev-server.js` alongside
+`tailscale serve --bg 5173`.
+
+Either way, keep using the proxy so the API stays on the page's own origin. The
+second rule below is still waiting otherwise.
 
 ## Why the same origin matters
 

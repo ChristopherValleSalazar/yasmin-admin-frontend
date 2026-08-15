@@ -44,22 +44,53 @@
   }
 
   /*
+   * The two ways this environment can stop admin_token from ever being stored.
+   * Both are decidable before a login is attempted, and a setup can hit both at
+   * once, so they are reported as a list rather than a single guess.
+   */
+  function detectCookieBlockers() {
+    const problems = [];
+
+    if (!window.isSecureContext) {
+      problems.push({
+        title: 'This page is not a secure context.',
+        detail:
+          'admin_token carries the Secure flag, and a browser only keeps Secure cookies ' +
+          `on https:// or on localhost and 127.0.0.1. ${window.location.origin} is ` +
+          'neither, so the cookie is discarded the moment it arrives. Serve this page ' +
+          'over HTTPS, or open it on localhost from the machine running the backend.',
+      });
+    }
+
+    if (cfg.isCrossSite) {
+      problems.push({
+        title: 'The page and the API are on different sites.',
+        detail:
+          'Different hostnames are different sites, and localhost and 127.0.0.1 count as ' +
+          'different even on one machine. admin_token is SameSite=Lax, so the browser ' +
+          'refuses to store it when it arrives from another site. Run "node dev-server.js" ' +
+          'and open the address it prints, which proxies the API onto this origin.',
+      });
+    }
+
+    return problems;
+  }
+
+  /*
    * Reached when the backend accepted the credentials but the follow-up request
-   * came back unauthenticated: the cookie never made it into the jar, or is not
-   * being attached. Name the likely cause rather than bouncing in silence.
+   * came back unauthenticated. Name the causes rather than bouncing in silence.
    */
   function explainMissingCookie() {
-    const lines = [
-      ['This page', window.location.origin],
-      ['The API', cfg.apiOrigin],
-    ];
-
     const heading = document.createElement('strong');
-    heading.textContent = 'Signed in, but the browser did not send the session cookie back.';
+    heading.textContent = 'Signed in, but the browser did not keep the session cookie.';
 
     const list = document.createElement('dl');
     list.className = 'diagnostics';
-    for (const [term, value] of lines) {
+    for (const [term, value] of [
+      ['This page', window.location.origin],
+      ['The API', cfg.apiOrigin],
+      ['Secure context', String(window.isSecureContext)],
+    ]) {
       const dt = document.createElement('dt');
       dt.textContent = term;
       const dd = document.createElement('dd');
@@ -69,24 +100,29 @@
       list.append(dt, dd);
     }
 
-    const advice = document.createElement('p');
-    advice.className = 'small';
-    if (cfg.isCrossSite) {
-      advice.textContent =
-        'Those two hostnames are different sites, and localhost and 127.0.0.1 count as ' +
-        'different even on one machine. admin_token is SameSite=Lax, so the browser ' +
-        'refuses to store it when it arrives from another site. Serve the page and the ' +
-        'API from one origin — run "node dev-server.js" and open the port it prints.';
+    diagnosis.className = 'alert alert--error';
+    diagnosis.replaceChildren(heading, list);
+
+    const problems = detectCookieBlockers();
+    if (problems.length === 0) {
+      const fallback = document.createElement('p');
+      fallback.className = 'small';
+      fallback.textContent =
+        'Nothing in this page\'s setup explains it. Check the login response in ' +
+        'DevTools → Network: a warning triangle next to Set-Cookie says why the browser ' +
+        'rejected the cookie.';
+      diagnosis.appendChild(fallback);
     } else {
-      advice.textContent =
-        'The page and the API share an origin, so SameSite is not the problem. Check the ' +
-        'login response in DevTools → Network: if Set-Cookie has a warning triangle, the ' +
-        'cookie was rejected. Over plain HTTP the Secure flag only works on localhost and ' +
-        '127.0.0.1; on any other hostname the page must be served over HTTPS.';
+      for (const problem of problems) {
+        const para = document.createElement('p');
+        para.className = 'small';
+        const label = document.createElement('strong');
+        label.textContent = `${problem.title} `;
+        para.append(label, document.createTextNode(problem.detail));
+        diagnosis.appendChild(para);
+      }
     }
 
-    diagnosis.className = 'alert alert--error';
-    diagnosis.append(heading, list, advice);
     diagnosis.hidden = false;
   }
 
@@ -121,11 +157,12 @@
   (async function onLoad() {
     const params = new URLSearchParams(window.location.search);
 
-    if (cfg.isCrossSite) {
+    // Both blockers are knowable now, so say so before credentials are typed.
+    const problems = detectCookieBlockers();
+    if (problems.length > 0) {
       showBanner(
-        `The API is on ${cfg.apiOrigin} but this page is on ${window.location.origin}. ` +
-          'Different hostnames are different sites, so the browser will drop the ' +
-          'SameSite=Lax session cookie. Run dev-server.js to serve both from one origin.',
+        `Sign-in will not work from here. ${problems.map((p) => p.title).join(' ')} ` +
+          'Details appear after you try.',
         'warning',
       );
     }
@@ -142,7 +179,8 @@
     }
 
     if (params.has('needsAuth')) {
-      if (!cfg.isCrossSite) showBanner('Please sign in to continue.', 'info');
+      // Do not paint over a blocker warning with a routine prompt.
+      if (problems.length === 0) showBanner('Please sign in to continue.', 'info');
       return;
     }
 
