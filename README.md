@@ -8,82 +8,57 @@ No build step, no dependencies: plain HTML, CSS and JavaScript.
 
 ## Running it
 
-```bash
-# 1. start the backend on :8080, then
-node dev-server.js          # http://localhost:5173
-```
+1. Start the backend on `http://localhost:8080`.
 
-`dev-server.js` serves this folder and proxies `/api/*` to the backend, so the
-page and the API share one origin. **This is not just convenience — it is what
-makes the session cookie work.** See below.
+2. Allow the page's origin, since the backend sets `allowCredentials(true)` and
+   so cannot use the `*` wildcard. For Live Server's default port:
 
-Point it somewhere else with environment variables:
+   ```
+   APP.CORS.ALLOWED.ORIGINS=http://localhost:5500
+   ```
 
-```bash
-PORT=3000 API_TARGET=http://localhost:9090 node dev-server.js
-CERT=host.crt KEY=host.key node dev-server.js      # serve over HTTPS
-```
+3. Serve this folder — Live Server, `python3 -m http.server 5500`, anything.
+   Do not open the files directly: a `file://` page has the origin `null` and
+   every request fails CORS.
 
-Open it on `localhost`. Reaching it on any other hostname needs HTTPS — see
-[Reaching it from another machine](#reaching-it-from-another-machine).
+4. Open **`http://localhost:5500/index.html`**.
 
-Because everything is same-origin, the backend needs no CORS configuration for
-local development at all.
+The front end fetches `http://localhost:8080` directly; change `apiBase` in
+`js/config.js` if the backend moves.
 
-## Reaching it from another machine
+## Open it on localhost, not a machine name
 
-Opening the page on a LAN or tailnet address over plain HTTP will not work, and
-the failure is silent on the backend: login returns `204` and the browser throws
-the cookie away. Two separate rules bite at once.
+`http://chris-fedora:5500` and `http://192.168.x.y:5500` will *not* work, even
+though they reach the same server. Two rules govern the session cookie, and both
+are worth knowing because neither produces a visible error:
 
-`admin_token` is `Secure`, and a browser only keeps Secure cookies on `https://`
-or on `localhost` / `127.0.0.1` / `[::1]`. Any other hostname over HTTP — a
-Tailscale `100.x.y.z`, a LAN `192.168.x.y`, a machine name — is not a secure
-context, so the cookie is discarded on arrival. `window.isSecureContext` in the
-console tells you which side of that line you are on.
+**The page hostname must match the API hostname.** `admin_token` is
+`SameSite=Lax`, so a browser only stores and sends it when the page and the API
+are on the same site. Ports are irrelevant — `localhost:5500` and
+`localhost:8080` are the same site — but hostnames are not interchangeable:
+`localhost`, `127.0.0.1` and `chris-fedora` are three different sites on one
+machine.
 
-On a tailnet, serve the proxy over real TLS:
+**The API origin must be trustworthy.** `admin_token` is also `Secure`, and a
+browser only keeps a Secure cookie when the response carrying it came from
+`https://` or from `localhost` / `127.0.0.1` / `[::1]`. This is about the API's
+origin, not the page's — an `http://localhost:5500` page talking to
+`http://localhost:8080` is fine.
 
-```bash
-tailscale cert <machine>.<tailnet>.ts.net      # issues a real certificate
-CERT=<machine>.<tailnet>.ts.net.crt \
-KEY=<machine>.<tailnet>.ts.net.key \
-  node dev-server.js
-```
-
-Then open `https://<machine>.<tailnet>.ts.net:5173`. Or let Tailscale terminate
-TLS instead and keep the server plain: `node dev-server.js` alongside
-`tailscale serve --bg 5173`.
-
-Either way, keep using the proxy so the API stays on the page's own origin. The
-second rule below is still waiting otherwise.
-
-## Why the same origin matters
-
-`admin_token` is issued as `SameSite=Lax`. A browser refuses to *store* a Lax
-cookie that arrives from a cross-site response, and refuses to *send* one on a
-cross-site request. Two hostnames are different sites even when they are the
-same machine — `127.0.0.1` and `localhost` included.
-
-Serving the page on one host and calling the API on another produces a failure
-that looks like a backend bug but is not:
+Measured in Chromium against the same cookie attributes the backend sends:
 
 | Page origin        | API origin         | Login | Next request |
 | ------------------ | ------------------ | ----- | ------------ |
-| `localhost:5173`   | `localhost:8080`   | `204` | `200`        |
-| `127.0.0.1:5173`   | `localhost:8080`   | `204` | **`401`**    |
-| `localhost:5173`   | `127.0.0.1:8080`   | `204` | **`401`**    |
-| `127.0.0.1:5173`   | `127.0.0.1:8080`   | `204` | `200`        |
+| `localhost:5500`   | `localhost:8080`   | `204` | `200`        |
+| `127.0.0.1:5500`   | `localhost:8080`   | `204` | **`401`**    |
+| `chris-fedora:5500`| `localhost:8080`   | `204` | **`401`**    |
+| `127.0.0.1:5500`   | `127.0.0.1:8080`   | `204` | `200`        |
 
-Login returns `204` and the backend logs a clean, successful authentication —
-the cookie is simply discarded by the browser before it is ever stored. The
-proxy removes the whole class of problem. Serving these files with VS Code Live
-Server (`127.0.0.1:5500`) or any other static server while `apiBase` points at
-`localhost:8080` reproduces row two.
-
-If the app is ever loaded with a cross-site API on purpose, it says so in a
-banner up front, and explains the dropped cookie after a login attempt rather
-than silently bouncing off the dashboard.
+Login returns `204` in every row and the backend logs a clean authentication —
+the cookie is simply discarded by the browser before it is ever stored. The app
+detects both conditions and says so before you type a password, then explains
+what happened after a login attempt instead of bouncing off the dashboard in
+silence.
 
 ## Pages
 
@@ -124,21 +99,27 @@ checked separately.
 5. In DevTools → Application → Cookies, `admin_token` should be listed with
    `HttpOnly` ✓ and `Secure` ✓.
 
-### Debugging against another origin
+`?api=http://localhost:9090` overrides the API base for the session and survives
+the hop to the dashboard; `?api=` clears it.
 
-`?api=http://localhost:8080` overrides the API base for the session and
-survives the hop to the dashboard; `?api=` clears it. It is an escape hatch for
-inspecting a remote backend, not a working configuration — the cookie will be
-dropped unless that origin shares this page's hostname.
+## Testing from a second device
+
+Not currently possible without changes, and worth knowing why before trying.
+`http://localhost:8080` on a phone or laptop means *that device's* localhost,
+where no backend is listening — so the API would have to move to
+`http://chris-fedora:8080` for the request to arrive at all.
+
+That fixes the hostname match, but then the cookie comes from `chris-fedora`
+over plain HTTP, which is not a trustworthy origin, so the `Secure` flag causes
+it to be dropped. Making it work needs HTTPS on the backend — on a tailnet,
+`tailscale cert` issues a real certificate — or a dev-only profile that relaxes
+the cookie. Weakening the cookie is not recommended: it makes local behaviour
+diverge from production, which is exactly where this class of bug hides.
 
 ## Before deploying
 
-The same rule applies in production. If the admin page and the API end up on
+The same rules apply in production. If the admin page and the API end up on
 different domains, `SameSite=Lax` will drop the session there exactly as it does
 locally. Either put both behind one domain (a reverse proxy, with the API under
 a path such as `/api`), or change the backend to issue the cookie as
 `SameSite=None; Secure`, which requires HTTPS on both sides.
-
-`Secure` cookies are accepted over plain HTTP only on `localhost` and
-`127.0.0.1`. On any other hostname the page must be served over HTTPS or the
-browser will discard the cookie without a visible error.

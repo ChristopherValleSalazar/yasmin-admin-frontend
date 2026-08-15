@@ -51,14 +51,14 @@
   function detectCookieBlockers() {
     const problems = [];
 
-    if (!window.isSecureContext) {
+    if (!cfg.apiOriginIsTrustworthy) {
       problems.push({
-        title: 'This page is not a secure context.',
+        title: 'The API is not on a trustworthy origin.',
         detail:
-          'admin_token carries the Secure flag, and a browser only keeps Secure cookies ' +
-          `on https:// or on localhost and 127.0.0.1. ${window.location.origin} is ` +
-          'neither, so the cookie is discarded the moment it arrives. Serve this page ' +
-          'over HTTPS, or open it on localhost from the machine running the backend.',
+          'admin_token carries the Secure flag, and a browser only keeps a Secure cookie ' +
+          `when the response carrying it came from https:// or from localhost. ${cfg.apiOrigin} ` +
+          'is neither, so the cookie is discarded the moment it arrives. Point the API at ' +
+          'http://localhost:8080, or serve the backend over HTTPS.',
       });
     }
 
@@ -66,14 +66,20 @@
       problems.push({
         title: 'The page and the API are on different sites.',
         detail:
-          'Different hostnames are different sites, and localhost and 127.0.0.1 count as ' +
-          'different even on one machine. admin_token is SameSite=Lax, so the browser ' +
-          'refuses to store it when it arrives from another site. Run "node dev-server.js" ' +
-          'and open the address it prints, which proxies the API onto this origin.',
+          `This page is on ${window.location.hostname} and the API is on ${apiHostname()}. ` +
+          'Different hostnames are different sites — localhost, 127.0.0.1 and a machine or ' +
+          'tailnet name all count as different, even on one computer. admin_token is ' +
+          'SameSite=Lax, so the browser refuses to store it when it arrives from another ' +
+          `site. Open this page on ${apiHostname()} instead, keeping whatever port your ` +
+          'static server uses — the port does not matter, only the hostname.',
       });
     }
 
     return problems;
+  }
+
+  function apiHostname() {
+    return new URL(cfg.apiBase).hostname;
   }
 
   /*
@@ -89,7 +95,7 @@
     for (const [term, value] of [
       ['This page', window.location.origin],
       ['The API', cfg.apiOrigin],
-      ['Secure context', String(window.isSecureContext)],
+      ['API origin trusted', String(cfg.apiOriginIsTrustworthy)],
     ]) {
       const dt = document.createElement('dt');
       dt.textContent = term;
