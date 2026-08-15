@@ -6,12 +6,59 @@ verify that the `admin_token` HttpOnly cookie round-trips correctly.
 
 No build step, no dependencies: plain HTML, CSS and JavaScript.
 
+## Running it
+
+```bash
+# 1. start the backend on :8080, then
+node dev-server.js          # http://localhost:5173
+```
+
+`dev-server.js` serves this folder and proxies `/api/*` to the backend, so the
+page and the API share one origin. **This is not just convenience — it is what
+makes the session cookie work.** See below.
+
+Point it somewhere else with environment variables:
+
+```bash
+PORT=3000 API_TARGET=http://localhost:9090 node dev-server.js
+```
+
+Because everything is same-origin, the backend needs no CORS configuration for
+local development at all.
+
+## Why the same origin matters
+
+`admin_token` is issued as `SameSite=Lax`. A browser refuses to *store* a Lax
+cookie that arrives from a cross-site response, and refuses to *send* one on a
+cross-site request. Two hostnames are different sites even when they are the
+same machine — `127.0.0.1` and `localhost` included.
+
+Serving the page on one host and calling the API on another produces a failure
+that looks like a backend bug but is not:
+
+| Page origin        | API origin         | Login | Next request |
+| ------------------ | ------------------ | ----- | ------------ |
+| `localhost:5173`   | `localhost:8080`   | `204` | `200`        |
+| `127.0.0.1:5173`   | `localhost:8080`   | `204` | **`401`**    |
+| `localhost:5173`   | `127.0.0.1:8080`   | `204` | **`401`**    |
+| `127.0.0.1:5173`   | `127.0.0.1:8080`   | `204` | `200`        |
+
+Login returns `204` and the backend logs a clean, successful authentication —
+the cookie is simply discarded by the browser before it is ever stored. The
+proxy removes the whole class of problem. Serving these files with VS Code Live
+Server (`127.0.0.1:5500`) or any other static server while `apiBase` points at
+`localhost:8080` reproduces row two.
+
+If the app is ever loaded with a cross-site API on purpose, it says so in a
+banner up front, and explains the dropped cookie after a login attempt rather
+than silently bouncing off the dashboard.
+
 ## Pages
 
-| File             | Purpose                                                             |
-| ---------------- | ------------------------------------------------------------------- |
-| `index.html`     | Login form → `POST /api/v1/admin/login`                              |
-| `dashboard.html` | Hello world, gated on the cookie; sign out → `POST /api/v1/admin/logout` |
+| File             | Purpose                                                                  |
+| ---------------- | ------------------------------------------------------------------------ |
+| `index.html`     | Login form → `POST /api/v1/admin/login`                                   |
+| `dashboard.html` | Hello world, gated on the cookie; sign out → `POST /api/v1/admin/logout`  |
 
 ## Endpoints used
 
@@ -26,32 +73,11 @@ Taken from `AdminController` in `salon-website-backend`:
   purely as a session probe, since a `ROLE_ADMIN` route is the only way to ask
   the server whether the cookie it holds is still valid.
 
-Because the cookie is HttpOnly, JavaScript can never read it. Both pages
-therefore treat the server's answer as the source of truth and send every
-request with `credentials: 'include'`.
-
-## Running it
-
-1. Start the backend on `http://localhost:8080`.
-
-2. Add the front end's origin to the backend's allowed origins, otherwise the
-   browser drops the response (the backend sets `allowCredentials(true)`, which
-   forbids the `*` wildcard):
-
-   ```
-   APP.CORS.ALLOWED.ORIGINS=http://localhost:5173
-   ```
-
-3. Serve this folder over HTTP — **not** by opening the file directly. A
-   `file://` page has the origin `null` and every request will fail CORS:
-
-   ```bash
-   python3 -m http.server 5173
-   ```
-
-4. Open <http://localhost:5173>.
-
-If the backend runs somewhere else, change `apiBase` in `js/config.js`.
+Because the cookie is HttpOnly, JavaScript can never read it. Both pages treat
+the server's answer as the source of truth and send every request with
+`credentials: 'include'`. After a successful login the page re-probes before
+navigating, so "the server issued a cookie" and "the browser kept it" are
+checked separately.
 
 ## Testing the cookie
 
@@ -59,23 +85,28 @@ If the backend runs somewhere else, change `apiBase` in `js/config.js`.
 2. The **Cookie check** panel shows the two facts that together prove the flag
    is working: the protected request returned `200` (so the browser attached
    `admin_token` on its own), and `document.cookie` cannot see the token.
-3. Reload the page, or close the tab and reopen <http://localhost:5173> — you go
-   straight to the dashboard, because the cookie survived and the login page's
-   own probe says the session is still good.
-4. Press **Sign out**, then confirm the login page reports that the cookie is no
-   longer accepted. Reaching `dashboard.html` directly should now bounce you
-   back to the login page.
+3. Reload, or close the tab and reopen — you go straight to the dashboard,
+   because the cookie survived.
+4. Press **Sign out**, then confirm the login page reports the cookie is no
+   longer accepted. Reaching `dashboard.html` directly should bounce you back.
 5. In DevTools → Application → Cookies, `admin_token` should be listed with
    `HttpOnly` ✓ and `Secure` ✓.
 
-## Notes on the environment
+### Debugging against another origin
 
-- `Secure` cookies are accepted over `http://localhost` by Chrome and Firefox,
-  so local testing works without TLS. On any other host the front end must be
-  served over HTTPS or the browser will discard the cookie silently.
-- `SameSite=Lax` is fine while both sides share a host — `localhost:5173` and
-  `localhost:8080` are the same site, as ports are not part of a site. Once the
-  front end is deployed to a different domain than the API, the cookie becomes
-  cross-site and the backend must issue it as `SameSite=None; Secure`.
-- The backend only allows the `Content-Type` request header through CORS, so
-  the login request sends nothing else.
+`?api=http://localhost:8080` overrides the API base for the session and
+survives the hop to the dashboard; `?api=` clears it. It is an escape hatch for
+inspecting a remote backend, not a working configuration — the cookie will be
+dropped unless that origin shares this page's hostname.
+
+## Before deploying
+
+The same rule applies in production. If the admin page and the API end up on
+different domains, `SameSite=Lax` will drop the session there exactly as it does
+locally. Either put both behind one domain (a reverse proxy, with the API under
+a path such as `/api`), or change the backend to issue the cookie as
+`SameSite=None; Secure`, which requires HTTPS on both sides.
+
+`Secure` cookies are accepted over plain HTTP only on `localhost` and
+`127.0.0.1`. On any other hostname the page must be served over HTTPS or the
+browser will discard the cookie without a visible error.

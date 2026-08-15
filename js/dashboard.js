@@ -19,7 +19,7 @@
   const logoutButton = document.getElementById('logout');
 
   document.getElementById('diag-endpoint').textContent =
-    `GET ${cfg.apiBase}${cfg.sessionProbePath}`;
+    `GET ${cfg.apiOrigin}${cfg.sessionProbePath}`;
 
   function setPill(element, text, variant) {
     element.textContent = text;
@@ -81,7 +81,7 @@
     // A failed first check means we were never signed in; a failure on a later
     // re-check means the session ended while the page was open.
     if (firstRun) {
-      toLogin();
+      toLogin('?needsAuth');
       return;
     }
 

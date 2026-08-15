@@ -175,6 +175,20 @@ code {
 .banner--success { background: var(--good-bg); color: var(--good-text); }
 
 .banner--warning { background: var(--warn-bg); color: var(--warn-text); }
+.banner--info { background: var(--bg); color: var(--muted); }
+
+/* The login page's cookie diagnosis, rendered into a narrow card. */
+#diagnosis { margin-top: 16px; }
+#diagnosis strong { display: block; margin-bottom: 8px; }
+#diagnosis p { margin: 0; }
+
+#diagnosis .diagnostics {
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0 0 10px;
+}
+
+#diagnosis .diagnostics dd { margin-bottom: 6px; }
 
 /* Dashboard -------------------------------------------------------------- */
 
