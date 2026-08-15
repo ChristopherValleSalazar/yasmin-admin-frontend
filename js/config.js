@@ -36,6 +36,12 @@
     // A 200 means the browser sent admin_token and AdminJwtFilter accepted it.
     sessionProbePath: '/api/v1/admin/appointments/day?size=1',
 
+    // Fixtures the dashboard's endpoint panel calls with.
+    probe: {
+      date: '2026-08-15',
+      appointmentId: 'ebe6ea62-a276-460c-92aa-916e4680ccf0',
+    },
+
     /*
      * Whether admin_token survives comes down to two independent rules, and
      * both are decided by the API origin — the origin that issues the cookie.

@@ -47,11 +47,25 @@
 
                 <button id="recheck" class="button button--ghost" type="button">Re-check session</button>
             </section>
+
+            <section aria-labelledby="endpoints-title">
+                <header class="endpoints__header">
+                    <h2 id="endpoints-title" class="section-title">Admin endpoints</h2>
+                    <span id="endpoint-summary" class="pill pill--neutral">running…</span>
+                </header>
+                <p class="muted small">
+                    Every route on <code>AdminController</code>, called with the session cookie.
+                    Authorized means the request got past the filter — a 409 or 405 counts, a
+                    401 or 403 does not. The writes only fire when you press their button.
+                </p>
+                <div id="endpoint-list" class="stack stack--tight"></div>
+            </section>
         </main>
     </div>
 
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/dashboard.js"></script>
+    <script src="js/endpoints.js"></script>
 </body>
 </html>

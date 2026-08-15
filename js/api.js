@@ -128,5 +128,54 @@
     };
   }
 
-  window.adminApi = { login, logout, probeSession, ApiError };
+  /*
+   * Sends one arbitrary admin request and reports what came back. Unlike the
+   * helpers above it never throws and never interprets a status as failure —
+   * the caller is checking whether the request was authorized, and a 409 or a
+   * 405 answers that just as well as a 204.
+   *
+   * A rejected fetch is reported as `blocked` rather than as an error: from
+   * script, an error response that arrived without CORS headers is
+   * indistinguishable from the network being down.
+   */
+  async function callEndpoint(method, path) {
+    const target = url(path);
+    const startedAt = performance.now();
+
+    let response;
+    try {
+      response = await fetch(target, { method, credentials: 'include' });
+    } catch (cause) {
+      return {
+        method,
+        url: target,
+        blocked: true,
+        durationMs: Math.round(performance.now() - startedAt),
+        bodyText: transportError(cause).message,
+      };
+    }
+
+    const bodyText = await response.text();
+    let bodyJson = null;
+    if (bodyText) {
+      try {
+        bodyJson = JSON.parse(bodyText);
+      } catch (ignored) {
+        // Not JSON; bodyText is what we show.
+      }
+    }
+
+    return {
+      method,
+      url: target,
+      blocked: false,
+      status: response.status,
+      statusText: response.statusText,
+      durationMs: Math.round(performance.now() - startedAt),
+      bodyText,
+      bodyJson,
+    };
+  }
+
+  window.adminApi = { login, logout, probeSession, callEndpoint, ApiError };
 })();

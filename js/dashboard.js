@@ -75,6 +75,10 @@
 
       checking.hidden = true;
       content.hidden = false;
+
+      // Only now is it worth calling anything else — before this the page may
+      // still be about to redirect to the login form.
+      if (firstRun) document.dispatchEvent(new CustomEvent('admin:session-ready'));
       return;
     }
 
