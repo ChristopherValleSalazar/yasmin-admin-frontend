@@ -1,0 +1,40 @@
+/* Copied verbatim from salon-website-frontend/css/global-layout.css (:root).
+   Keep the two in sync: change colors there first, then paste the block here. */
+:root {
+  --color-light: #F6F1E8;
+  --color-form: #f1e9da;
+  --color-dark: #2E2019;
+  --color-dark-hover: #1a1310;
+  --color-primary: #B08A52;
+  --color-panel: rgb(239, 232, 220);
+  --colot-accent-panel: rgb(59, 42, 32);
+
+  --color-submit-btn-hover: #4B3B2B;
+  --color-submit-btn: #614d38;
+  --color-accent-from-logo: #b08a52;
+
+  --color-img-input: #eadec8;
+
+  --color-logo-inner-circle: #160f0a;
+  --color-logo-outer-circle: #c69c37;
+
+  --color-logo-petal-dark: #a8883a;
+  --color-logo-petal-text-light: #dcae3a;
+  /* Form field outlines. The dark petal reads as a border on the cream form; the light one washes out at 1px. */
+  --color-border: var(--color-logo-petal-dark);
+
+  --color-logo-buttefly-wings: #cc7288;
+  --color-logo-buttefly-wings-hover: #c4547a;
+  --color-logo-butterfly-body: #66c293;
+
+  --color-logo-text-light: #f7f1e8;
+
+  --font-size-h1: 1.5625rem;
+  --font-size-h2: 1.5rem;
+  --font-size-h3: 1.2rem;
+  --font-size-base: 0.9375rem;
+  --font-size-p: 0.680rem;
+  --font-size-contact: 1.1rem;
+  --font-size-small: .7rem;
+  --font-size-label: 1.2rem;
+}

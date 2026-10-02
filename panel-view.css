@@ -1,20 +1,25 @@
-/* Same purple palette as login.css. Text/background pairs below clear WCAG AA. */
+/* Colors come from palette.css (the public site's :root). Shades the public site
+   does not have are mixed from those variables, so they follow any palette change.
+   Every text/background pair below clears WCAG AA (4.5:1). */
 :root {
-  --purple-950: #1d0b33;
-  --purple-900: #2a1145;
-  --purple-700: #5b2a86;
-  --purple-600: #6d34a0;
-  --purple-500: #8a4fc4;
-  --purple-200: #ddc9f2;
-  --purple-100: #ece1f8;
-  --purple-50: #f7f2fc;
+  --color-muted: color-mix(in srgb, var(--color-dark) 78%, var(--color-light));
+  /* the logo pink, darkened until light text on it (and it as text) passes */
+  --color-rose-strong: color-mix(in srgb, var(--color-logo-buttefly-wings-hover) 62%, var(--color-dark));
+  --color-error: var(--color-rose-strong);
+  --color-error-bg: color-mix(in srgb, var(--color-logo-buttefly-wings) 14%, var(--color-light));
+  --color-success-text: color-mix(in srgb, var(--color-logo-butterfly-body) 40%, var(--color-dark));
 
-  --text-muted: #574a66;
-  --error: #b3261e;
-  --error-bg: #fdecea;
-  --success: #1b6e3a;
-  --warning: #8a4b00;
-  /* on white: ~6.6:1 */
+  /* Row states.
+     Orange: the logo gold pulled toward the logo pink, so it reads as part of the palette. */
+  --color-orange: color-mix(in oklch, var(--color-primary) 62%, var(--color-logo-buttefly-wings));
+  --row-overlap-bg: color-mix(in srgb, var(--color-orange) 38%, var(--color-light));
+  --row-overlap-hover: color-mix(in srgb, var(--color-orange) 50%, var(--color-light));
+  /* Gray base: the dark brown with its color drained out. */
+  --row-gray: oklch(from var(--color-dark) 0.43 0.012 h);
+  --row-gray-hover: oklch(from var(--color-dark) 0.38 0.012 h);
+  /* Deleted: the same gray base tinted toward the logo pink. */
+  --row-deleted: color-mix(in oklch, var(--row-gray) 72%, var(--color-logo-buttefly-wings-hover));
+  --row-deleted-hover: color-mix(in oklch, var(--row-gray-hover) 72%, var(--color-logo-buttefly-wings-hover));
 
   --radius: 14px;
   --row-height: 52px;
@@ -31,34 +36,39 @@ body {
   min-height: 100vh;
   font-family: "Inter", system-ui, sans-serif;
   font-size: 0.95rem;
-  color: var(--purple-900);
-  background: linear-gradient(160deg, var(--purple-50) 0%, var(--purple-100) 100%);
+  color: var(--color-dark);
+  background: var(--color-form);
 }
 
 :focus-visible {
-  outline: 3px solid var(--purple-500);
+  outline: 3px solid var(--color-submit-btn);
   outline-offset: 2px;
 }
 
-/* HEADER */
+/* HEADER: same dark bar and horizontal logo as the public site */
 .panel-header {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 16px 28px;
-  color: #ffffff;
-  background: linear-gradient(90deg, var(--purple-900), var(--purple-700));
+  align-items: center;
+  gap: 16px;
+  padding: 12px 28px;
+  color: var(--color-light);
+  background: var(--color-dark);
 }
 
-.brand {
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.6rem;
-  font-weight: 700;
+.panel-logo {
+  display: block;
+  width: 260px;
+  height: auto;
 }
 
 .brand-sub {
+  padding-left: 16px;
   font-size: 0.85rem;
-  color: var(--purple-100);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-light);
+  border-left: 1px solid color-mix(in srgb, var(--color-light) 35%, transparent);
 }
 
 /* LAYOUT: calendar left, table right; stacked on narrow screens */
@@ -74,23 +84,27 @@ body {
 
 .calendar-col,
 .table-col {
-  background: #ffffff;
-  border: 1px solid var(--purple-200);
+  background: var(--color-light);
+  border: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
   border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgba(42, 17, 69, 0.08);
+  box-shadow: 0 8px 24px rgba(46, 32, 25, 0.08);
   padding: 20px;
 }
 
 .section-title {
   margin: 0 0 12px;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  color: var(--purple-700);
+  color: var(--color-dark);
 }
 
 /* BUTTONS */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 42px;
   padding: 0 18px;
   font: inherit;
@@ -102,57 +116,82 @@ body {
 }
 
 .btn:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .btn-primary {
-  color: #ffffff;
-  background: var(--purple-700);
+  color: var(--color-light);
+  background: var(--color-submit-btn);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--purple-600);
+  background: var(--color-submit-btn-hover);
 }
 
 .btn-secondary {
-  color: var(--purple-700);
-  background: #ffffff;
-  border-color: var(--purple-700);
+  color: var(--color-submit-btn);
+  background: var(--color-light);
+  border-color: var(--color-submit-btn);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--purple-50);
+  background: var(--color-form);
 }
 
 .btn-success {
-  color: #ffffff;
-  background: var(--success);
+  color: var(--color-dark);
+  background: var(--color-logo-butterfly-body);
 }
 
 .btn-warning {
-  color: #ffffff;
-  background: var(--warning);
-}
-
-.btn-danger {
-  color: var(--error);
-  background: #ffffff;
-  border-color: var(--error);
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: var(--error-bg);
+  color: var(--color-dark);
+  background: var(--color-primary);
 }
 
 .btn-success:hover:not(:disabled),
 .btn-warning:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+}
+
+.btn-danger {
+  color: var(--color-error);
+  background: var(--color-light);
+  border-color: var(--color-error);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-error-bg);
+}
+
+.btn-danger-solid {
+  color: var(--color-light);
+  background: var(--color-rose-strong);
+}
+
+.btn-danger-solid:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+.btn-icon {
+  width: 42px;
+  padding: 0;
+  color: var(--color-submit-btn);
+  background: var(--color-light);
+  border-color: var(--color-submit-btn);
+}
+
+.btn-icon svg {
+  fill: currentColor;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--color-form);
 }
 
 .btn-block {
   width: 100%;
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 /* CALENDAR: flatpickr overrides lifted from the public booking page */
@@ -161,7 +200,8 @@ body {
   justify-content: center;
 }
 
-.calendar-wrapper .flatpickr-input {
+/* flatpickr leaves the inline calendar's own input visible; the calendar is the control. */
+.calendar-wrapper>input.flatpickr-input {
   display: none;
 }
 
@@ -185,24 +225,49 @@ body {
 }
 
 .flatpickr-day {
-  color: var(--purple-900);
+  color: var(--color-dark);
 }
 
+/* The public site's selected day is the logo pink; darkened here so the light
+   number on it passes AA. */
 .flatpickr-day.selected,
 .flatpickr-day.selected:hover,
 .flatpickr-day.selected:focus {
-  background: var(--purple-700);
-  border-color: var(--purple-700);
-  color: #ffffff;
+  background: var(--color-rose-strong);
+  border-color: var(--color-rose-strong);
+  color: var(--color-light);
 }
 
 .flatpickr-day.today:not(.selected) {
-  border-color: var(--purple-500);
+  border-color: var(--color-logo-butterfly-body);
 }
 
 .flatpickr-day.flatpickr-disabled,
 .flatpickr-day.flatpickr-disabled:hover {
-  color: #8f8699;
+  color: color-mix(in srgb, var(--color-dark) 45%, var(--color-light));
+}
+
+/* Popup calendar (modals): positioned under its input, inside the dialog */
+.flatpickr-wrapper {
+  display: block;
+  width: 100%;
+}
+
+.flatpickr-calendar.static {
+  top: calc(100% + 4px);
+  z-index: 20;
+  background: var(--color-light);
+  box-shadow: 0 10px 30px rgba(46, 32, 25, 0.3);
+}
+
+.flatpickr-calendar.static.is-above {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.flatpickr-calendar.static::before,
+.flatpickr-calendar.static::after {
+  display: none;
 }
 
 /* Native date input fallback (flatpickr failed to load) */
@@ -226,7 +291,7 @@ body {
 
 .table-day {
   margin: 0;
-  color: var(--text-muted);
+  color: var(--color-muted);
 }
 
 /* Fixed height (header + 7 rows) so the layout does not jump between pages */
@@ -234,7 +299,8 @@ body {
   position: relative;
   height: calc(var(--row-height) * 8 + 2px);
   overflow: auto;
-  border: 1px solid var(--purple-200);
+  background: var(--color-light);
+  border: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
   border-radius: 10px;
 }
 
@@ -253,7 +319,7 @@ body {
   padding: 0 14px;
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid var(--purple-100);
+  border-bottom: 1px solid var(--color-form);
 }
 
 .apt-table td:nth-child(4) {
@@ -263,12 +329,13 @@ body {
 .apt-table th {
   position: sticky;
   top: 0;
-  font-size: 0.8rem;
+  z-index: 1;
+  font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--purple-900);
-  background: var(--purple-50);
+  color: var(--color-dark);
+  background: var(--color-form);
 }
 
 .apt-table tbody tr {
@@ -276,13 +343,50 @@ body {
 }
 
 .apt-table tbody tr:hover {
-  background: var(--purple-50);
+  background: var(--color-panel);
 }
 
 .apt-table tbody tr:focus-visible {
-  outline: 3px solid var(--purple-500);
+  outline: 3px solid var(--color-submit-btn);
   outline-offset: -3px;
-  background: var(--purple-50);
+}
+
+/* Row states */
+.apt-table tbody tr.row-overlapping {
+  background: var(--row-overlap-bg);
+  box-shadow: inset 5px 0 0 var(--color-orange);
+}
+
+.apt-table tbody tr.row-overlapping:hover {
+  background: var(--row-overlap-hover);
+}
+
+.apt-table tbody tr.row-rescheduled {
+  color: var(--color-light);
+  background: var(--row-gray);
+}
+
+.apt-table tbody tr.row-rescheduled:hover {
+  background: var(--row-gray-hover);
+}
+
+.apt-table tbody tr.row-deleted {
+  color: var(--color-light);
+  background: var(--row-deleted);
+}
+
+.apt-table tbody tr.row-deleted:hover {
+  background: var(--row-deleted-hover);
+}
+
+.apt-table tbody tr.row-rescheduled td,
+.apt-table tbody tr.row-deleted td {
+  border-bottom-color: color-mix(in srgb, var(--color-light) 20%, transparent);
+}
+
+.apt-table tbody tr.row-rescheduled:focus-visible,
+.apt-table tbody tr.row-deleted:focus-visible {
+  outline-color: var(--color-light);
 }
 
 .apt-table.is-empty thead {
@@ -308,63 +412,84 @@ body {
 .empty-title {
   margin: 0 0 6px;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  color: var(--purple-700);
+  color: var(--color-dark);
 }
 
 .empty-sub {
   margin: 0;
-  color: var(--text-muted);
+  color: var(--color-muted);
 }
 
-/* STATUS PILLS: dark text on light tints, all above 4.5:1 */
+/* STATUS PILLS: dark text on light tints of palette colors */
 .status-pill {
   display: inline-block;
   padding: 3px 10px;
   font-size: 0.8rem;
   font-weight: 600;
+  color: var(--color-dark);
   border-radius: 999px;
 }
 
 .status-booked {
-  color: #2a1145;
-  background: #e6dbf5;
+  background: color-mix(in srgb, var(--color-primary) 28%, var(--color-light));
 }
 
 .status-confirmed {
-  color: #0d4a8a;
-  background: #dceafa;
+  background: color-mix(in srgb, var(--color-logo-butterfly-body) 30%, var(--color-light));
 }
 
 .status-completed {
-  color: #145a2f;
-  background: #d9f2e1;
+  background: color-mix(in srgb, var(--color-logo-butterfly-body) 60%, var(--color-light));
 }
 
 .status-no_show {
-  color: #7a3f00;
-  background: #fbe8cf;
+  background: color-mix(in srgb, var(--color-logo-petal-text-light) 45%, var(--color-light));
 }
 
 .status-canceled,
 .status-deleted {
-  color: #8c1d16;
-  background: #f9dcd9;
+  background: color-mix(in srgb, var(--color-logo-buttefly-wings) 30%, var(--color-light));
 }
 
 .status-rescheduled {
-  color: #5b2a86;
-  background: #f1e3fb;
+  background: color-mix(in srgb, var(--color-dark) 14%, var(--color-light));
 }
 
-/* PAGINATION */
+/* TABLE FOOTER: legend + pagination */
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.legend-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--row-overlap-bg);
+  box-shadow: inset 4px 0 0 var(--color-orange);
+  border: 1px solid color-mix(in srgb, var(--color-orange) 60%, transparent);
+}
+
 .pagination {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 14px;
+  gap: 14px;
+  margin-left: auto;
 }
 
 .page-info {
@@ -376,24 +501,25 @@ body {
 /* MODALS (native <dialog>) */
 .modal {
   width: min(720px, calc(100vw - 32px));
-  max-height: calc(100vh - 48px);
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   padding: 0;
-  color: var(--purple-900);
-  background: #ffffff;
+  color: var(--color-dark);
+  background: var(--color-light);
   border: none;
   border-radius: var(--radius);
-  box-shadow: 0 24px 60px rgba(20, 5, 40, 0.4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
 }
 
 .modal::backdrop {
-  background: rgba(29, 11, 51, 0.45);
+  background: rgba(26, 19, 16, 0.5);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
 }
 
 .modal-inner {
   position: relative;
-  padding: 24px 28px 24px;
+  padding: 22px 28px 22px;
 }
 
 .modal-close {
@@ -402,9 +528,9 @@ body {
   left: 12px;
   width: 40px;
   height: 40px;
-  font-size: 1.8rem;
+  font-size: 1.9rem;
   line-height: 1;
-  color: var(--purple-900);
+  color: var(--color-dark);
   background: transparent;
   border: none;
   border-radius: 8px;
@@ -412,15 +538,15 @@ body {
 }
 
 .modal-close:hover {
-  background: var(--purple-50);
+  background: var(--color-form);
 }
 
 .modal-title {
-  margin: 4px 0 18px 44px;
+  margin: 2px 0 16px 44px;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.7rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  color: var(--purple-700);
+  color: var(--color-dark);
 }
 
 /* Detail (read mode) */
@@ -433,7 +559,7 @@ body {
 
 .detail-list dt {
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--color-muted);
 }
 
 .detail-list dd {
@@ -452,8 +578,8 @@ body {
   height: 64px;
   padding: 0;
   overflow: hidden;
-  background: var(--purple-50);
-  border: 2px solid var(--purple-200);
+  background: var(--color-form);
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   cursor: zoom-in;
 }
@@ -466,7 +592,7 @@ body {
 }
 
 .thumb:hover {
-  border-color: var(--purple-700);
+  border-color: var(--color-dark);
 }
 
 /* Action row: left and right groups pushed to either side */
@@ -474,9 +600,9 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 22px;
   padding-top: 18px;
-  border-top: 1px solid var(--purple-100);
+  border-top: 1px solid var(--color-form);
 }
 
 .action-group {
@@ -492,118 +618,158 @@ body {
   margin-left: auto;
 }
 
-/* Lightbox */
-.lightbox {
-  width: auto;
-  max-width: 94vw;
-  max-height: 94vh;
-  background: var(--purple-950);
+/* Edit mode is short, so the popup calendar may hang outside the dialog box
+   instead of making it scroll. */
+.modal.is-editing {
+  overflow: visible;
 }
 
-.lightbox-inner {
-  padding: 56px 16px 16px;
-}
-
-.lightbox .modal-close {
-  color: #ffffff;
-}
-
-.lightbox .modal-close:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-#lightbox-img {
-  display: block;
-  max-width: calc(94vw - 32px);
-  max-height: calc(94vh - 72px);
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  margin: 0 auto;
-}
-
-/* FORMS (edit mode + new appointment) */
-.edit-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 18px;
+.edit-hint {
+  margin: 0 0 14px;
+  color: var(--color-muted);
 }
 
 .edit-form[hidden] {
   display: none;
 }
 
-.edit-field {
+/* Delete confirmation */
+.modal-small {
+  width: min(420px, calc(100vw - 32px));
+}
+
+.confirm-inner {
+  text-align: center;
+  padding: 28px;
+}
+
+.confirm-icon {
+  display: inline-flex;
+  margin-bottom: 8px;
+  color: var(--color-rose-strong);
+}
+
+.confirm-title {
+  margin: 0 0 8px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.6rem;
+}
+
+.confirm-message {
+  margin: 0 0 20px;
+  color: var(--color-muted);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Lightbox: most of the screen on desktop/iPad, the whole viewport on phones */
+.lightbox {
+  width: auto;
+  max-width: 94vw;
+  max-height: 94vh;
+  max-height: 94dvh;
+  background: var(--color-dark-hover);
+}
+
+.lightbox-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 16px 16px;
+}
+
+.lightbox .modal-close {
+  color: var(--color-light);
+}
+
+.lightbox .modal-close:hover {
+  background: rgba(246, 241, 232, 0.15);
+}
+
+#lightbox-img {
+  display: block;
+  max-width: calc(94vw - 32px);
+  max-height: calc(94vh - 72px);
+  max-height: calc(94dvh - 72px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* FORM FIELDS (new appointment + edit mode) */
+.field {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
-.edit-field:has(textarea),
-.edit-field:has(.service-select) {
-  grid-column: 1 / -1;
-}
-
-.edit-field-check {
-  flex-direction: row;
-  align-items: center;
-}
-
-.new-form {
-  display: flex;
-  flex-direction: column;
-}
-
-.new-form>label,
-.field-heading {
-  margin: 14px 0 6px;
-  font-size: 0.95rem;
+.field label,
+.booking-type legend,
+.services-fieldset legend {
+  padding: 0;
   font-weight: 600;
-  color: var(--purple-900);
+  color: var(--color-dark);
 }
 
-.edit-field label {
-  font-weight: 600;
-  color: var(--purple-900);
-}
-
-.modal input:not([type="checkbox"]):not([type="radio"]):not(.cur-year),
-.modal select,
-.modal textarea {
+.modal input[type="text"],
+.modal input[type="time"],
+.modal input[type="date"] {
   width: 100%;
   min-height: 44px;
   padding: 8px 12px;
   font: inherit;
-  color: var(--purple-900);
-  background: var(--purple-50);
-  border: 2px solid var(--purple-200);
+  color: var(--color-dark);
+  background: var(--color-form);
+  border: 2px solid var(--color-border);
   border-radius: 10px;
 }
 
-.modal textarea {
-  resize: vertical;
+.modal input::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
 }
 
-.modal input[type="checkbox"],
-.modal input[type="radio"] {
+.modal .booking-date {
+  cursor: pointer;
+}
+
+.modal input[type="radio"],
+.modal input[type="checkbox"]:not(.service-checkbox) {
   width: 20px;
   height: 20px;
   margin: 0;
-  accent-color: var(--purple-700);
+  accent-color: var(--color-submit-btn);
+}
+
+.new-top-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px 28px;
+  align-items: end;
+  margin-bottom: 14px;
 }
 
 .booking-type {
-  display: flex;
-  gap: 24px;
   margin: 0;
   padding: 0;
   border: none;
 }
 
 .booking-type legend {
-  margin-bottom: 8px;
-  padding: 0;
-  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.radio-row {
+  display: flex;
+  gap: 20px;
+  min-height: 44px;
+  align-items: center;
 }
 
 .radio-option {
@@ -611,91 +777,71 @@ body {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.form-error {
-  margin: 16px 0 0;
-  padding: 10px 14px;
-  font-weight: 500;
-  color: var(--error);
-  background: var(--error-bg);
-  border: 1px solid var(--error);
-  border-radius: 10px;
+.booking-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.form-error[hidden] {
-  display: none;
+.date-time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
-/* SERVICES PICKER: from the public booking page, recolored purple */
-.service-select {
-  position: relative;
-  width: 100%;
+/* SERVICES: fixed-height list, only this box scrolls */
+.services-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
 }
 
-.service-trigger {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
-  font: inherit;
-  text-align: left;
-  color: var(--purple-900);
-  background: var(--purple-50);
-  border: 2px solid var(--purple-200);
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.service-trigger.is-placeholder {
-  color: var(--text-muted);
-}
-
-.service-trigger.input-error {
-  border-color: var(--error);
-}
-
-.service-panel {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 4;
-  margin: 0.35rem 0 0;
-  padding: 6px;
-  max-height: 280px;
-  overflow-y: auto;
-  background: #ffffff;
-  border: 2px solid var(--purple-200);
-  border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(42, 17, 69, 0.2);
-}
-
-.service-panel.show {
-  display: block;
+.services-fieldset legend {
+  margin-bottom: 4px;
 }
 
 .service-panel-hint {
-  margin: 4px 8px 8px;
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.service-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 8px;
+  height: 172px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  background: var(--color-form);
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.services-fieldset.input-error .service-list {
+  border-color: var(--color-error);
 }
 
 .service-option {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 8px;
   cursor: pointer;
 }
 
 .service-option:hover {
-  background: var(--purple-50);
+  background: var(--color-panel);
 }
 
 /* Visually hidden but still focusable */
-.modal .service-panel .service-checkbox {
+.service-checkbox {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -714,9 +860,9 @@ body {
   justify-content: center;
   width: 18px;
   height: 18px;
-  border: 1.5px solid var(--purple-500);
+  border: 1.5px solid var(--color-border);
   border-radius: 5px;
-  background: #fff;
+  background: var(--color-light);
 }
 
 .service-option-box::after {
@@ -725,7 +871,7 @@ body {
   height: 11px;
   transform: scale(0);
   transition: transform 0.12s ease;
-  background: var(--purple-700);
+  background: var(--color-submit-btn);
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }
 
@@ -734,7 +880,7 @@ body {
 }
 
 .service-checkbox:focus-visible+.service-option-box {
-  outline: 3px solid var(--purple-500);
+  outline: 3px solid var(--color-submit-btn);
   outline-offset: 2px;
 }
 
@@ -747,20 +893,145 @@ body {
   background: none;
 }
 
+/* AVAILABILITY PANEL (where additional notes used to be in edit mode) */
+.availability-panel {
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 2px solid var(--color-form);
+  border-radius: 10px;
+  background: var(--color-light);
+}
+
+.availability-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.availability-row svg {
+  flex-shrink: 0;
+}
+
+.availability-panel p {
+  margin: 0;
+}
+
+.availability-panel.is-idle,
+.availability-panel.is-info {
+  color: var(--color-muted);
+}
+
+.availability-panel.is-info {
+  border-color: var(--color-border);
+}
+
+.availability-panel.is-ok {
+  color: var(--color-success-text);
+  border-color: var(--color-logo-butterfly-body);
+  background: color-mix(in srgb, var(--color-logo-butterfly-body) 12%, var(--color-light));
+}
+
+.availability-panel.is-conflict,
+.availability-panel.is-warning {
+  color: var(--color-dark);
+  border-color: var(--color-orange);
+  background: color-mix(in srgb, var(--color-orange) 18%, var(--color-light));
+}
+
+.availability-panel.is-error {
+  color: var(--color-error);
+  border-color: var(--color-error);
+  background: var(--color-error-bg);
+}
+
+.conflict-list {
+  margin: 8px 0 6px 32px;
+  padding: 0;
+}
+
+.conflict-list li {
+  margin-bottom: 4px;
+}
+
+.conflict-id {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+.availability-note {
+  margin-left: 32px !important;
+  font-size: 0.85rem;
+}
+
+.btn-retry {
+  margin-top: 10px;
+  min-height: 36px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: 3px solid var(--color-form);
+  border-top-color: var(--color-submit-btn);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.form-error {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  font-weight: 500;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error);
+  border-radius: 10px;
+}
+
+.form-error[hidden] {
+  display: none;
+}
+
 /* TOAST (popover, so it sits above open dialogs) */
 .toast {
   position: fixed;
   inset: 20px 20px auto auto;
   margin: 0;
-  max-width: 360px;
+  max-width: 380px;
   padding: 14px 18px;
+  align-items: center;
+  gap: 10px;
   font-weight: 500;
-  color: var(--error);
-  background: var(--error-bg);
-  border: 1px solid var(--error);
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error);
   border-left-width: 5px;
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(20, 5, 40, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.toast:popover-open {
+  display: flex;
+}
+
+.toast svg {
+  flex-shrink: 0;
+}
+
+/* DESKTOP + IPAD: the new appointment modal never scrolls; the popup calendar
+   may hang outside the dialog box. */
+@media (min-width: 701px) and (min-height: 640px) {
+  .modal-new {
+    overflow: visible;
+  }
 }
 
 /* NARROW SCREENS: stack calendar above table */
@@ -771,9 +1042,27 @@ body {
   }
 }
 
+@media (max-width: 700px) {
+  .new-top-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .service-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .panel-header {
-    padding: 14px 16px;
+    padding: 10px 16px;
+  }
+
+  .panel-logo {
+    width: 180px;
+  }
+
+  .brand-sub {
+    display: none;
   }
 
   .calendar-col,
@@ -789,8 +1078,8 @@ body {
     padding: 20px 16px;
   }
 
-  .edit-form {
-    grid-template-columns: 1fr;
+  .date-time-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .toast {
@@ -800,5 +1089,31 @@ body {
 
   .flatpickr-calendar.inline {
     max-width: 100%;
+  }
+
+  /* Lightbox fills the viewport */
+  .lightbox {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .lightbox-inner {
+    height: 100%;
+    padding: 56px 0 0;
+  }
+
+  #lightbox-img {
+    max-width: 100vw;
+    max-height: calc(100dvh - 56px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
   }
 }

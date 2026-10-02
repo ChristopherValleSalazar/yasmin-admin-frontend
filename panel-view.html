@@ -1,36 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Yasmin Beauty Salon | Admin Panel</title>
+  <title>Yasmin Beauty Salon | Panel de citas</title>
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.min.css">
+  <link rel="stylesheet" href="palette.css">
   <link rel="stylesheet" href="panel-view.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
   <script src="config.js" defer></script>
   <!-- Prototype only: delete this tag (and mock.js) to talk to the real backend. -->
   <script src="mock.js" defer></script>
+  <script src="booking.js" defer></script>
   <script src="panel-view.js" defer></script>
 </head>
 
 <body>
   <header class="panel-header">
-    <span class="brand">Yasmin Beauty Salon</span>
-    <span class="brand-sub">Admin panel</span>
+    <img src="images/flower-and-text-hor-final-final.svg" alt="Yasmin Beauty Salon" class="panel-logo" width="260">
+    <span class="brand-sub">Panel de citas</span>
   </header>
 
   <main class="panel-layout">
     <section class="calendar-col" aria-labelledby="calendar-heading">
       <!-- A heading rather than a <label>: flatpickr turns the input into type="hidden",
            which a label can no longer point at. -->
-      <h2 class="section-title" id="calendar-heading">Select a day</h2>
+      <h2 class="section-title" id="calendar-heading">Elige un día</h2>
       <div class="calendar-wrapper">
         <input type="text" id="panel-date" aria-labelledby="calendar-heading" autocomplete="off">
       </div>
@@ -39,202 +43,278 @@
     <section class="table-col" aria-labelledby="table-heading">
       <div class="table-toolbar">
         <div>
-          <h2 class="section-title" id="table-heading">Appointments</h2>
+          <h2 class="section-title" id="table-heading">Citas</h2>
           <p class="table-day" id="table-day" aria-live="polite"></p>
         </div>
-        <button type="button" class="btn btn-primary" id="add-btn">Add appointment</button>
+        <button type="button" class="btn btn-primary" id="add-btn">Agregar cita</button>
       </div>
 
       <div class="table-area" id="table-area" aria-busy="false">
         <table class="apt-table" id="apt-table">
           <thead>
             <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Date</th>
-              <th scope="col">Start time</th>
-              <th scope="col">Services</th>
-              <th scope="col">Status</th>
+              <th scope="col">Nombre</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Hora de inicio</th>
+              <th scope="col">Servicios</th>
+              <th scope="col">Estado</th>
             </tr>
           </thead>
           <tbody id="apt-rows"></tbody>
         </table>
 
         <div class="empty-state" id="empty-state" hidden>
-          <p class="empty-title">No appointments yet for this day.</p>
-          <p class="empty-sub">Check back or refresh later.</p>
+          <p class="empty-title">Todavía no hay citas para este día.</p>
+          <p class="empty-sub">Vuelve a revisar o actualiza la página más tarde.</p>
         </div>
       </div>
 
-      <nav class="pagination" aria-label="Appointment pages">
-        <button type="button" class="btn btn-secondary" id="prev-btn">Previous</button>
-        <span class="page-info" id="page-info" aria-live="polite">Page 1 of 1</span>
-        <button type="button" class="btn btn-secondary" id="next-btn">Next</button>
-      </nav>
+      <div class="table-footer">
+        <p class="legend" aria-hidden="true">
+          <span class="legend-swatch legend-overlap"></span> Se cruza con otra cita
+        </p>
+        <nav class="pagination" aria-label="Páginas de citas">
+          <!-- Arrow SVGs are flatpickr's month arrows, the ones on the public site's calendar -->
+          <button type="button" class="btn btn-icon" id="prev-btn" aria-label="Página anterior">
+            <svg viewBox="0 0 17 17" width="16" height="16" aria-hidden="true">
+              <path d="M5.207 8.471l7.146 7.147-0.707 0.707-7.853-7.854 7.854-7.853 0.707 0.707-7.147 7.146z" />
+            </svg>
+          </button>
+          <span class="page-info" id="page-info" aria-live="polite">Página 1 de 1</span>
+          <button type="button" class="btn btn-icon" id="next-btn" aria-label="Página siguiente">
+            <svg viewBox="0 0 17 17" width="16" height="16" aria-hidden="true">
+              <path d="M13.207 8.472l-7.854 7.854-0.707-0.707 7.146-7.146-7.146-7.148 0.707-0.707 7.854 7.854z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
     </section>
   </main>
 
   <!-- APPOINTMENT DETAIL -->
   <dialog class="modal" id="detail-dialog" aria-labelledby="detail-title">
     <div class="modal-inner">
-      <button type="button" class="modal-close" data-close aria-label="Close">&times;</button>
-      <h2 class="modal-title" id="detail-title">Appointment</h2>
+      <!-- &times; is the close glyph the public site uses on its cookie banner -->
+      <button type="button" class="modal-close" data-close aria-label="Cerrar">&times;</button>
+      <h2 class="modal-title" id="detail-title">Cita</h2>
 
       <div id="detail-read"></div>
 
-      <form id="edit-form" class="edit-form" hidden novalidate></form>
+      <form id="edit-form" class="edit-form" hidden novalidate>
+        <p class="edit-hint">Cambia la fecha, la hora de inicio o los servicios. La hora de fin se calcula sola.</p>
+        <div id="edit-fields"></div>
+      </form>
 
       <p class="form-error" id="detail-error" role="alert" hidden></p>
 
       <div class="modal-actions">
         <div class="action-group" id="read-actions-left">
-          <button type="button" class="btn btn-success" data-action="COMPLETED">Completed</button>
-          <button type="button" class="btn btn-warning" data-action="NO_SHOW">No show</button>
+          <button type="button" class="btn btn-success" data-action="COMPLETED">
+            <!-- Checkmark from the public site's success modal -->
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 6L9 17l-5-5"></path>
+            </svg>
+            Completada
+          </button>
+          <button type="button" class="btn btn-warning" data-action="NO_SHOW">
+            <!-- Alert circle from the public site's failure modal -->
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <line x1="12" y1="7.5" x2="12" y2="13"></line>
+              <line x1="12" y1="16.5" x2="12" y2="16.5"></line>
+            </svg>
+            No asistió
+          </button>
         </div>
         <div class="action-group action-group-right" id="read-actions-right">
-          <button type="button" class="btn btn-danger" id="delete-btn">Delete</button>
-          <button type="button" class="btn btn-primary" id="edit-btn">Edit</button>
+          <button type="button" class="btn btn-danger" id="delete-btn">Eliminar</button>
+          <button type="button" class="btn btn-primary" id="edit-btn">Editar</button>
         </div>
         <div class="action-group action-group-right" id="edit-actions" hidden>
-          <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="save-btn" form="edit-form">Save</button>
+          <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="save-btn" form="edit-form">Guardar</button>
         </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- DELETE CONFIRMATION (same wording pattern as the public site's confirm dialog) -->
+  <dialog class="modal modal-small" id="confirm-dialog" aria-labelledby="confirm-title"
+    aria-describedby="confirm-message">
+    <div class="modal-inner confirm-inner">
+      <span class="confirm-icon" aria-hidden="true">
+        <!-- Question circle from the public site's confirm dialog -->
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M9.5 9.2a2.5 2.5 0 0 1 4.8 1c0 1.6-2.3 2-2.3 3.3"></path>
+          <line x1="12" y1="17" x2="12" y2="17"></line>
+        </svg>
+      </span>
+      <h2 class="confirm-title" id="confirm-title">¿Eliminar esta cita?</h2>
+      <p class="confirm-message" id="confirm-message"></p>
+      <div class="confirm-actions">
+        <button type="button" class="btn btn-secondary" id="confirm-no">No, volver</button>
+        <button type="button" class="btn btn-danger-solid" id="confirm-yes">Sí, eliminar</button>
       </div>
     </div>
   </dialog>
 
   <!-- IMAGE LIGHTBOX (opens on top of the detail modal) -->
-  <dialog class="modal lightbox" id="lightbox-dialog" aria-label="Reference photo">
-    <div class="modal-inner lightbox-inner">
-      <button type="button" class="modal-close" data-close aria-label="Close photo">&times;</button>
-      <img id="lightbox-img" alt="Reference photo, large">
+  <dialog class="modal lightbox" id="lightbox-dialog" aria-label="Foto de referencia">
+    <div class="lightbox-inner">
+      <button type="button" class="modal-close" data-close aria-label="Cerrar foto">&times;</button>
+      <img id="lightbox-img" alt="Foto de referencia en grande">
     </div>
   </dialog>
 
   <!-- NEW APPOINTMENT -->
-  <dialog class="modal" id="new-dialog" aria-labelledby="new-title">
+  <dialog class="modal modal-new" id="new-dialog" aria-labelledby="new-title">
     <div class="modal-inner">
-      <button type="button" class="modal-close" data-close aria-label="Close">&times;</button>
-      <h2 class="modal-title" id="new-title">New appointment</h2>
+      <button type="button" class="modal-close" data-close aria-label="Cerrar">&times;</button>
+      <h2 class="modal-title" id="new-title">Nueva cita</h2>
 
       <form id="new-form" class="new-form">
-        <fieldset class="booking-type">
-          <legend>Booking type</legend>
-          <label class="radio-option" for="type-phone">
-            <input type="radio" id="type-phone" name="bookingType" value="Phone" required>
-            Phone
-          </label>
-          <label class="radio-option" for="type-walkin">
-            <input type="radio" id="type-walkin" name="bookingType" value="Walk-in">
-            Walk-in
-          </label>
-        </fieldset>
+        <div class="new-top-row">
+          <fieldset class="booking-type">
+            <legend>Tipo de reserva</legend>
+            <div class="radio-row">
+              <!-- Values stay in English: they are appended to the name sent to the backend -->
+              <label class="radio-option" for="type-phone">
+                <input type="radio" id="type-phone" name="bookingType" value="Phone" required>
+                Por teléfono
+              </label>
+              <label class="radio-option" for="type-walkin">
+                <input type="radio" id="type-walkin" name="bookingType" value="Walk-in">
+                Sin cita
+              </label>
+            </div>
+          </fieldset>
 
-        <label for="new-name">Name</label>
-        <input type="text" id="new-name" name="name" required autocomplete="off">
-
-        <h3 class="field-heading" id="new-date-heading">Date</h3>
-        <div class="calendar-wrapper calendar-wrapper-modal">
-          <input type="text" id="new-date" aria-labelledby="new-date-heading" autocomplete="off">
+          <div class="field">
+            <label for="new-name">Nombre</label>
+            <input type="text" id="new-name" name="name" required autocomplete="off" placeholder="Nombre del cliente">
+          </div>
         </div>
 
-        <label for="new-time">Time</label>
-        <input type="time" id="new-time" name="time" step="300" required>
-
-        <label for="new-services-trigger">Services</label>
-        <div class="service-slot" id="new-services"></div>
+        <div id="new-fields"></div>
 
         <p class="form-error" id="new-error" role="alert" hidden></p>
 
-        <button type="submit" class="btn btn-primary btn-block" id="new-submit">Add to schedule</button>
+        <button type="submit" class="btn btn-primary btn-block" id="new-submit">Agregar a la agenda</button>
       </form>
     </div>
   </dialog>
 
-  <!-- Services picker, copied from the public booking page. Cloned by panel-view.js
-       for the new appointment form and for edit mode. -->
-  <template id="service-picker-template">
-    <div class="service-select">
-      <button type="button" class="service-trigger is-placeholder" aria-haspopup="true"
-        aria-expanded="false">Select up to 2 services</button>
-      <div class="service-panel" role="group">
-        <p class="service-panel-hint">Choose up to 2 services</p>
+  <!-- Shared booking fields (services, date, start time, availability panel), cloned
+       by booking.js into the new appointment modal and into edit mode. The service
+       options are the public booking page's list, with its Spanish names. -->
+  <template id="booking-fields-template">
+    <div class="booking-fields">
+      <fieldset class="services-fieldset">
+        <legend>Servicios</legend>
+        <p class="service-panel-hint">Elige hasta 2 servicios · <span class="service-count">0 de 2</span></p>
+        <div class="service-list">
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="HAIRCUT">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Corte de Cabello</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="BABY_HIGHLIGHT">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Baby Highlight</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="DYES">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Tintes</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="KERATIN_TREATMENT">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Tratamiento de Keratina</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="BLOW_DRYING">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Secado con Secadora</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="WASHING">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Lavado</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="TREATMENT_MOISTURIZING">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Tratamiento + Hidratación</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="HAIRCUT_BLOW_DRY">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Corte de Cabello + Secado con Secadora</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="COLOR_TOUCH_UP">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Retoque de Color</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="PERM">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Perm</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="BEARD_TRIM">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Recorte de Barba</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="EYEBROW_SHAPING">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Diseño de Cejas</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="HAIRCUT_BEARD_TRIM">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Corte de Cabello + Recorte de Barba</span>
+          </label>
+          <label class="service-option">
+            <input type="checkbox" class="service-checkbox" value="HAIRCUT_BEARD_TRIM_EYEBROW_SHAPING">
+            <span class="service-option-box" aria-hidden="true"></span>
+            <span class="service-option-label">Corte de Cabello + Recorte de Barba + Diseño de Cejas</span>
+          </label>
+        </div>
+      </fieldset>
 
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="HAIRCUT">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Haircut</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="BABY_HIGHLIGHT">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Baby Highlight</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="DYES">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Dyes</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="KERATIN_TREATMENT">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Keratin Treatment</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="BLOW_DRYING">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Blow Drying</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="WASHING">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Washing</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="TREATMENT_MOISTURIZING">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Treatment Moisturizing</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="HAIRCUT_BLOW_DRY">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Haircut Blow Dry</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="COLOR_TOUCH_UP">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Color Touch Up</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="PERM">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Perm</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="BEARD_TRIM">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Beard Trim</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="EYEBROW_SHAPING">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Eyebrow Shaping</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="HAIRCUT_BEARD_TRIM">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Haircut Beard Trim</span>
-        </label>
-        <label class="service-option">
-          <input type="checkbox" class="service-checkbox" value="HAIRCUT_BEARD_TRIM_EYEBROW_SHAPING">
-          <span class="service-option-box" aria-hidden="true"></span>
-          <span class="service-option-label">Haircut Beard Trim Eyebrow Shaping</span>
-        </label>
+      <div class="date-time-row">
+        <div class="field">
+          <label class="booking-date-label">Fecha</label>
+          <input type="text" class="booking-date" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="booking-time-label">Hora de inicio</label>
+          <input type="time" class="booking-time" step="300">
+        </div>
       </div>
+
+      <div class="availability-panel" aria-live="polite"></div>
     </div>
   </template>
 
   <!-- popover puts the toast in the top layer, above any open <dialog> -->
-  <div id="toast" class="toast" popover="manual" role="alert"></div>
+  <div id="toast" class="toast" popover="manual" role="alert">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9"></circle>
+      <line x1="12" y1="7.5" x2="12" y2="13"></line>
+      <line x1="12" y1="16.5" x2="12" y2="16.5"></line>
+    </svg>
+    <span id="toast-text"></span>
+  </div>
 </body>
 
 </html>

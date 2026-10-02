@@ -11,6 +11,7 @@ const emailError = document.getElementById("email-error");
 const passwordInput = document.getElementById("password");
 const loginBtn = document.getElementById("login-btn");
 const toast = document.getElementById("toast");
+const toastText = document.getElementById("toast-text");
 
 document.getElementById("copyright-year").textContent = new Date().getFullYear();
 
@@ -42,17 +43,25 @@ function applyEmailState() {
 }
 
 emailInput.addEventListener("input", () => {
+    emailInput.setCustomValidity("");
     clearTimeout(emailTimer);
     clearEmailState();
     emailTimer = setTimeout(applyEmailState, EMAIL_DEBOUNCE_MS);
 });
 
 // Native validation blocks a submit with a bad email; show the state right away then.
+// The bubble text is set in Spanish because the browser's own may not be.
 emailInput.addEventListener("invalid", () => {
+    emailInput.setCustomValidity(emailInput.value === ""
+        ? "Escribe tu correo electrónico."
+        : "Escribe un correo válido, por ejemplo nombre@ejemplo.com.");
     clearTimeout(emailTimer);
     applyEmailState();
     if (emailInput.value === "") emailInput.classList.add("is-invalid");
 });
+
+passwordInput.addEventListener("invalid", () => passwordInput.setCustomValidity("Escribe tu contraseña."));
+passwordInput.addEventListener("input", () => passwordInput.setCustomValidity(""));
 
 // ---------------------------------------------------------------------------
 // Toast
@@ -62,7 +71,7 @@ let toastTimer;
 
 function showToast(message) {
     clearTimeout(toastTimer);
-    toast.textContent = message;
+    toastText.textContent = message;
     toast.hidden = false;
     toastTimer = setTimeout(() => { toast.hidden = true; }, TOAST_MS);
 }
@@ -92,9 +101,9 @@ form.addEventListener("submit", async (e) => {
             return;
         }
         // One generic message for every failure: never say which field was wrong.
-        showToast("Invalid email or password.");
+        showToast("Correo o contraseña incorrectos.");
     } catch {
-        showToast("Could not reach the server. Please try again.");
+        showToast("No pudimos conectar con el servidor. Inténtalo de nuevo.");
     }
 
     loginBtn.disabled = false;
