@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Yasmin Beauty Salon | Admin Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="login.css">
+  <script src="config.js" defer></script>
+  <!-- Prototype only: delete this tag (and mock.js) to talk to the real backend. -->
+  <script src="mock.js" defer></script>
+  <script src="login.js" defer></script>
+</head>
+
+<body>
+  <main class="login-layout">
+    <form id="login-form" class="login-card">
+      <h1 class="login-title">Login</h1>
+
+      <label for="email">Email</label>
+      <input type="text" id="email" name="email" autocomplete="username" inputmode="email" required
+        pattern="[^\s@]+@[^\s@]+\.[^\s@]{2,}" title="Enter a valid email address, for example name@example.com"
+        aria-describedby="email-error">
+      <p class="field-error" id="email-error" hidden>Enter a valid email address, for example name@example.com.</p>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+
+      <!-- One element for both layouts: login.css floats it top right on desktop/iPad
+           and leaves it in place (above the button) on phones. -->
+      <div id="toast" class="toast" role="alert" hidden></div>
+
+      <button type="submit" id="login-btn" class="login-btn">Sign in</button>
+    </form>
+  </main>
+
+  <footer class="login-footer">
+    <span class="copyright">&copy; <span id="copyright-year"></span> Yasmin Beauty Salon</span>
+  </footer>
+</body>
+
+</html>

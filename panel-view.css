@@ -1,0 +1,804 @@
+/* Same purple palette as login.css. Text/background pairs below clear WCAG AA. */
+:root {
+  --purple-950: #1d0b33;
+  --purple-900: #2a1145;
+  --purple-700: #5b2a86;
+  --purple-600: #6d34a0;
+  --purple-500: #8a4fc4;
+  --purple-200: #ddc9f2;
+  --purple-100: #ece1f8;
+  --purple-50: #f7f2fc;
+
+  --text-muted: #574a66;
+  --error: #b3261e;
+  --error-bg: #fdecea;
+  --success: #1b6e3a;
+  --warning: #8a4b00;
+  /* on white: ~6.6:1 */
+
+  --radius: 14px;
+  --row-height: 52px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 0.95rem;
+  color: var(--purple-900);
+  background: linear-gradient(160deg, var(--purple-50) 0%, var(--purple-100) 100%);
+}
+
+:focus-visible {
+  outline: 3px solid var(--purple-500);
+  outline-offset: 2px;
+}
+
+/* HEADER */
+.panel-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 16px 28px;
+  color: #ffffff;
+  background: linear-gradient(90deg, var(--purple-900), var(--purple-700));
+}
+
+.brand {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.brand-sub {
+  font-size: 0.85rem;
+  color: var(--purple-100);
+}
+
+/* LAYOUT: calendar left, table right; stacked on narrow screens */
+.panel-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 28px 40px;
+}
+
+.calendar-col,
+.table-col {
+  background: #ffffff;
+  border: 1px solid var(--purple-200);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(42, 17, 69, 0.08);
+  padding: 20px;
+}
+
+.section-title {
+  margin: 0 0 12px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--purple-700);
+}
+
+/* BUTTONS */
+.btn {
+  min-height: 42px;
+  padding: 0 18px;
+  font: inherit;
+  font-weight: 600;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  color: #ffffff;
+  background: var(--purple-700);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--purple-600);
+}
+
+.btn-secondary {
+  color: var(--purple-700);
+  background: #ffffff;
+  border-color: var(--purple-700);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--purple-50);
+}
+
+.btn-success {
+  color: #ffffff;
+  background: var(--success);
+}
+
+.btn-warning {
+  color: #ffffff;
+  background: var(--warning);
+}
+
+.btn-danger {
+  color: var(--error);
+  background: #ffffff;
+  border-color: var(--error);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--error-bg);
+}
+
+.btn-success:hover:not(:disabled),
+.btn-warning:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* CALENDAR: flatpickr overrides lifted from the public booking page */
+.calendar-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.calendar-wrapper .flatpickr-input {
+  display: none;
+}
+
+.flatpickr-calendar.inline {
+  box-shadow: none;
+  background: transparent;
+}
+
+.flatpickr-month {
+  min-height: 48px;
+}
+
+.flatpickr-months .flatpickr-next-month,
+.flatpickr-months .flatpickr-prev-month {
+  margin-top: 6px;
+}
+
+.flatpickr-weekdays,
+.flatpickr-days {
+  font-size: 16px;
+}
+
+.flatpickr-day {
+  color: var(--purple-900);
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.selected:focus {
+  background: var(--purple-700);
+  border-color: var(--purple-700);
+  color: #ffffff;
+}
+
+.flatpickr-day.today:not(.selected) {
+  border-color: var(--purple-500);
+}
+
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover {
+  color: #8f8699;
+}
+
+/* Native date input fallback (flatpickr failed to load) */
+.calendar-wrapper input[type="date"] {
+  display: block;
+  width: 100%;
+}
+
+/* TABLE */
+.table-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.table-toolbar .section-title {
+  margin-bottom: 2px;
+}
+
+.table-day {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* Fixed height (header + 7 rows) so the layout does not jump between pages */
+.table-area {
+  position: relative;
+  height: calc(var(--row-height) * 8 + 2px);
+  overflow: auto;
+  border: 1px solid var(--purple-200);
+  border-radius: 10px;
+}
+
+.table-area[aria-busy="true"] .apt-table tbody {
+  opacity: 0.5;
+}
+
+.apt-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.apt-table th,
+.apt-table td {
+  height: var(--row-height);
+  padding: 0 14px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--purple-100);
+}
+
+.apt-table td:nth-child(4) {
+  white-space: normal;
+}
+
+.apt-table th {
+  position: sticky;
+  top: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--purple-900);
+  background: var(--purple-50);
+}
+
+.apt-table tbody tr {
+  cursor: pointer;
+}
+
+.apt-table tbody tr:hover {
+  background: var(--purple-50);
+}
+
+.apt-table tbody tr:focus-visible {
+  outline: 3px solid var(--purple-500);
+  outline-offset: -3px;
+  background: var(--purple-50);
+}
+
+.apt-table.is-empty thead {
+  visibility: hidden;
+}
+
+/* EMPTY STATE */
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.empty-state[hidden] {
+  display: none;
+}
+
+.empty-title {
+  margin: 0 0 6px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--purple-700);
+}
+
+.empty-sub {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* STATUS PILLS: dark text on light tints, all above 4.5:1 */
+.status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.status-booked {
+  color: #2a1145;
+  background: #e6dbf5;
+}
+
+.status-confirmed {
+  color: #0d4a8a;
+  background: #dceafa;
+}
+
+.status-completed {
+  color: #145a2f;
+  background: #d9f2e1;
+}
+
+.status-no_show {
+  color: #7a3f00;
+  background: #fbe8cf;
+}
+
+.status-canceled,
+.status-deleted {
+  color: #8c1d16;
+  background: #f9dcd9;
+}
+
+.status-rescheduled {
+  color: #5b2a86;
+  background: #f1e3fb;
+}
+
+/* PAGINATION */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.page-info {
+  min-width: 110px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* MODALS (native <dialog>) */
+.modal {
+  width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 0;
+  color: var(--purple-900);
+  background: #ffffff;
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: 0 24px 60px rgba(20, 5, 40, 0.4);
+}
+
+.modal::backdrop {
+  background: rgba(29, 11, 51, 0.45);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.modal-inner {
+  position: relative;
+  padding: 24px 28px 24px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 40px;
+  height: 40px;
+  font-size: 1.8rem;
+  line-height: 1;
+  color: var(--purple-900);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  background: var(--purple-50);
+}
+
+.modal-title {
+  margin: 4px 0 18px 44px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--purple-700);
+}
+
+/* Detail (read mode) */
+.detail-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.detail-list dt {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.detail-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.thumb {
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--purple-50);
+  border: 2px solid var(--purple-200);
+  border-radius: 8px;
+  cursor: zoom-in;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb:hover {
+  border-color: var(--purple-700);
+}
+
+/* Action row: left and right groups pushed to either side */
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--purple-100);
+}
+
+.action-group {
+  display: flex;
+  gap: 10px;
+}
+
+.action-group[hidden] {
+  display: none;
+}
+
+.action-group-right {
+  margin-left: auto;
+}
+
+/* Lightbox */
+.lightbox {
+  width: auto;
+  max-width: 94vw;
+  max-height: 94vh;
+  background: var(--purple-950);
+}
+
+.lightbox-inner {
+  padding: 56px 16px 16px;
+}
+
+.lightbox .modal-close {
+  color: #ffffff;
+}
+
+.lightbox .modal-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+#lightbox-img {
+  display: block;
+  max-width: calc(94vw - 32px);
+  max-height: calc(94vh - 72px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+/* FORMS (edit mode + new appointment) */
+.edit-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+
+.edit-form[hidden] {
+  display: none;
+}
+
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit-field:has(textarea),
+.edit-field:has(.service-select) {
+  grid-column: 1 / -1;
+}
+
+.edit-field-check {
+  flex-direction: row;
+  align-items: center;
+}
+
+.new-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.new-form>label,
+.field-heading {
+  margin: 14px 0 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--purple-900);
+}
+
+.edit-field label {
+  font-weight: 600;
+  color: var(--purple-900);
+}
+
+.modal input:not([type="checkbox"]):not([type="radio"]):not(.cur-year),
+.modal select,
+.modal textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  color: var(--purple-900);
+  background: var(--purple-50);
+  border: 2px solid var(--purple-200);
+  border-radius: 10px;
+}
+
+.modal textarea {
+  resize: vertical;
+}
+
+.modal input[type="checkbox"],
+.modal input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--purple-700);
+}
+
+.booking-type {
+  display: flex;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.booking-type legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-weight: 600;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.form-error {
+  margin: 16px 0 0;
+  padding: 10px 14px;
+  font-weight: 500;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error);
+  border-radius: 10px;
+}
+
+.form-error[hidden] {
+  display: none;
+}
+
+/* SERVICES PICKER: from the public booking page, recolored purple */
+.service-select {
+  position: relative;
+  width: 100%;
+}
+
+.service-trigger {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--purple-900);
+  background: var(--purple-50);
+  border: 2px solid var(--purple-200);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.service-trigger.is-placeholder {
+  color: var(--text-muted);
+}
+
+.service-trigger.input-error {
+  border-color: var(--error);
+}
+
+.service-panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  margin: 0.35rem 0 0;
+  padding: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 2px solid var(--purple-200);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(42, 17, 69, 0.2);
+}
+
+.service-panel.show {
+  display: block;
+}
+
+.service-panel-hint {
+  margin: 4px 8px 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.service-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.service-option:hover {
+  background: var(--purple-50);
+}
+
+/* Visually hidden but still focusable */
+.modal .service-panel .service-checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.service-option-box {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--purple-500);
+  border-radius: 5px;
+  background: #fff;
+}
+
+.service-option-box::after {
+  content: "";
+  width: 11px;
+  height: 11px;
+  transform: scale(0);
+  transition: transform 0.12s ease;
+  background: var(--purple-700);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+.service-checkbox:checked+.service-option-box::after {
+  transform: scale(1);
+}
+
+.service-checkbox:focus-visible+.service-option-box {
+  outline: 3px solid var(--purple-500);
+  outline-offset: 2px;
+}
+
+.service-option.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.service-option.is-disabled:hover {
+  background: none;
+}
+
+/* TOAST (popover, so it sits above open dialogs) */
+.toast {
+  position: fixed;
+  inset: 20px 20px auto auto;
+  margin: 0;
+  max-width: 360px;
+  padding: 14px 18px;
+  font-weight: 500;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error);
+  border-left-width: 5px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(20, 5, 40, 0.3);
+}
+
+/* NARROW SCREENS: stack calendar above table */
+@media (max-width: 900px) {
+  .panel-layout {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .panel-header {
+    padding: 14px 16px;
+  }
+
+  .calendar-col,
+  .table-col {
+    padding: 14px;
+  }
+
+  .table-toolbar {
+    flex-direction: column;
+  }
+
+  .modal-inner {
+    padding: 20px 16px;
+  }
+
+  .edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .toast {
+    inset: 12px 12px auto 12px;
+    max-width: none;
+  }
+
+  .flatpickr-calendar.inline {
+    max-width: 100%;
+  }
+}

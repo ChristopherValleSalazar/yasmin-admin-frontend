@@ -1,0 +1,237 @@
+/* Purple palette. panel-view.css repeats this block so both pages match.
+   Text/background pairs used below all clear WCAG AA (4.5:1). */
+:root {
+  --purple-950: #1d0b33;
+  --purple-900: #2a1145;
+  /* body text on white: ~15:1 */
+  --purple-700: #5b2a86;
+  /* button bg with white text: ~9:1 */
+  --purple-600: #6d34a0;
+  /* hover */
+  --purple-500: #8a4fc4;
+  /* focus ring */
+  --purple-200: #ddc9f2;
+  --purple-50: #f7f2fc;
+
+  --text-muted: #574a66;
+  /* on white: ~8:1 */
+  --error: #b3261e;
+  /* on white: ~6.5:1 */
+  --error-bg: #fdecea;
+  --success: #1b6e3a;
+  /* on white: ~6.4:1 */
+
+  --radius: 14px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: "Inter", system-ui, sans-serif;
+  color: var(--purple-900);
+  background-color: var(--purple-950);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Bokeh background: soft multicolor dots, purple dominant, blurred.
+   Drawn on a pseudo element so the blur does not touch the form. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -60px;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(167, 95, 230, 0.85) 0 70px, transparent 140px),
+    radial-gradient(circle at 30% 70%, rgba(120, 60, 200, 0.8) 0 110px, transparent 200px),
+    radial-gradient(circle at 48% 30%, rgba(236, 120, 200, 0.55) 0 60px, transparent 130px),
+    radial-gradient(circle at 62% 82%, rgba(90, 120, 230, 0.55) 0 80px, transparent 160px),
+    radial-gradient(circle at 78% 22%, rgba(190, 110, 255, 0.7) 0 90px, transparent 180px),
+    radial-gradient(circle at 88% 60%, rgba(255, 170, 220, 0.45) 0 50px, transparent 110px),
+    radial-gradient(circle at 20% 45%, rgba(80, 200, 220, 0.35) 0 40px, transparent 90px),
+    radial-gradient(circle at 70% 50%, rgba(140, 70, 210, 0.6) 0 130px, transparent 240px),
+    radial-gradient(circle at 5% 90%, rgba(100, 40, 170, 0.9) 0 120px, transparent 220px),
+    linear-gradient(135deg, #2b1150 0%, #3d1772 45%, #24104a 100%);
+  filter: blur(28px);
+}
+
+/* LAYOUT */
+.login-layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 24px clamp(50px, 5vw, 80px) 64px 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 32px 32px;
+  background: #ffffff;
+  border: 1px solid var(--purple-200);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 50px rgba(20, 5, 40, 0.45);
+}
+
+.login-title {
+  margin: 0 0 24px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--purple-700);
+}
+
+label {
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--purple-900);
+}
+
+input {
+  width: 100%;
+  min-height: 46px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--purple-900);
+  background: var(--purple-50);
+  border: 2px solid var(--purple-200);
+  border-radius: 10px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus-visible {
+  outline: 3px solid var(--purple-500);
+  outline-offset: 2px;
+  border-color: var(--purple-700);
+}
+
+/* Email states, set by login.js after the debounce */
+#email.is-valid {
+  border-color: var(--success);
+  box-shadow: 0 0 0 1px var(--success);
+}
+
+#email.is-invalid {
+  border-color: var(--error);
+  box-shadow: 0 0 0 1px var(--error);
+}
+
+.field-error {
+  margin: -12px 0 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--error);
+}
+
+.login-btn {
+  min-height: 48px;
+  margin-top: 6px;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--purple-700);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: var(--purple-600);
+}
+
+.login-btn:focus-visible {
+  outline: 3px solid var(--purple-500);
+  outline-offset: 3px;
+}
+
+.login-btn:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+/* TOAST: floats top right on desktop and iPad */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  max-width: 340px;
+  padding: 14px 18px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error);
+  border-left-width: 5px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(20, 5, 40, 0.35);
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* FOOTER: same text as the public site's .copyright */
+.login-footer {
+  position: fixed;
+  left: 20px;
+  bottom: 16px;
+}
+
+.copyright {
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* PHONES: form centered and full width; toast drops into the form above the button */
+@media (max-width: 600px) {
+  .login-layout {
+    justify-content: center;
+    padding: 24px 16px 64px;
+  }
+
+  .login-card {
+    max-width: none;
+    padding: 28px 20px 24px;
+  }
+
+  .toast {
+    position: static;
+    max-width: none;
+    margin: 0 0 14px;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}

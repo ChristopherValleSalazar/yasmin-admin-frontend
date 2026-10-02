@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Yasmin Beauty Salon | Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.min.css">
+  <link rel="stylesheet" href="panel-view.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="config.js" defer></script>
+  <!-- Prototype only: delete this tag (and mock.js) to talk to the real backend. -->
+  <script src="mock.js" defer></script>
+  <script src="panel-view.js" defer></script>
+</head>
+
+<body>
+  <header class="panel-header">
+    <span class="brand">Yasmin Beauty Salon</span>
+    <span class="brand-sub">Admin panel</span>
+  </header>
+
+  <main class="panel-layout">
+    <section class="calendar-col" aria-labelledby="calendar-heading">
+      <!-- A heading rather than a <label>: flatpickr turns the input into type="hidden",
+           which a label can no longer point at. -->
+      <h2 class="section-title" id="calendar-heading">Select a day</h2>
+      <div class="calendar-wrapper">
+        <input type="text" id="panel-date" aria-labelledby="calendar-heading" autocomplete="off">
+      </div>
+    </section>
+
+    <section class="table-col" aria-labelledby="table-heading">
+      <div class="table-toolbar">
+        <div>
+          <h2 class="section-title" id="table-heading">Appointments</h2>
+          <p class="table-day" id="table-day" aria-live="polite"></p>
+        </div>
+        <button type="button" class="btn btn-primary" id="add-btn">Add appointment</button>
+      </div>
+
+      <div class="table-area" id="table-area" aria-busy="false">
+        <table class="apt-table" id="apt-table">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Date</th>
+              <th scope="col">Start time</th>
+              <th scope="col">Services</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody id="apt-rows"></tbody>
+        </table>
+
+        <div class="empty-state" id="empty-state" hidden>
+          <p class="empty-title">No appointments yet for this day.</p>
+          <p class="empty-sub">Check back or refresh later.</p>
+        </div>
+      </div>
+
+      <nav class="pagination" aria-label="Appointment pages">
+        <button type="button" class="btn btn-secondary" id="prev-btn">Previous</button>
+        <span class="page-info" id="page-info" aria-live="polite">Page 1 of 1</span>
+        <button type="button" class="btn btn-secondary" id="next-btn">Next</button>
+      </nav>
+    </section>
+  </main>
+
+  <!-- APPOINTMENT DETAIL -->
+  <dialog class="modal" id="detail-dialog" aria-labelledby="detail-title">
+    <div class="modal-inner">
+      <button type="button" class="modal-close" data-close aria-label="Close">&times;</button>
+      <h2 class="modal-title" id="detail-title">Appointment</h2>
+
+      <div id="detail-read"></div>
+
+      <form id="edit-form" class="edit-form" hidden novalidate></form>
+
+      <p class="form-error" id="detail-error" role="alert" hidden></p>
+
+      <div class="modal-actions">
+        <div class="action-group" id="read-actions-left">
+          <button type="button" class="btn btn-success" data-action="COMPLETED">Completed</button>
+          <button type="button" class="btn btn-warning" data-action="NO_SHOW">No show</button>
+        </div>
+        <div class="action-group action-group-right" id="read-actions-right">
+          <button type="button" class="btn btn-danger" id="delete-btn">Delete</button>
+          <button type="button" class="btn btn-primary" id="edit-btn">Edit</button>
+        </div>
+        <div class="action-group action-group-right" id="edit-actions" hidden>
+          <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-btn" form="edit-form">Save</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- IMAGE LIGHTBOX (opens on top of the detail modal) -->
+  <dialog class="modal lightbox" id="lightbox-dialog" aria-label="Reference photo">
+    <div class="modal-inner lightbox-inner">
+      <button type="button" class="modal-close" data-close aria-label="Close photo">&times;</button>
+      <img id="lightbox-img" alt="Reference photo, large">
+    </div>
+  </dialog>
+
+  <!-- NEW APPOINTMENT -->
+  <dialog class="modal" id="new-dialog" aria-labelledby="new-title">
+    <div class="modal-inner">
+      <button type="button" class="modal-close" data-close aria-label="Close">&times;</button>
+      <h2 class="modal-title" id="new-title">New appointment</h2>
+
+      <form id="new-form" class="new-form">
+        <fieldset class="booking-type">
+          <legend>Booking type</legend>
+          <label class="radio-option" for="type-phone">
+            <input type="radio" id="type-phone" name="bookingType" value="Phone" required>
+            Phone
+          </label>
+          <label class="radio-option" for="type-walkin">
+            <input type="radio" id="type-walkin" name="bookingType" value="Walk-in">
+            Walk-in
+          </label>
+        </fieldset>
+
+        <label for="new-name">Name</label>
+        <input type="text" id="new-name" name="name" required autocomplete="off">
+
+        <h3 class="field-heading" id="new-date-heading">Date</h3>
+        <div class="calendar-wrapper calendar-wrapper-modal">
+          <input type="text" id="new-date" aria-labelledby="new-date-heading" autocomplete="off">
+        </div>
+
+        <label for="new-time">Time</label>
+        <input type="time" id="new-time" name="time" step="300" required>
+
+        <label for="new-services-trigger">Services</label>
+        <div class="service-slot" id="new-services"></div>
+
+        <p class="form-error" id="new-error" role="alert" hidden></p>
+
+        <button type="submit" class="btn btn-primary btn-block" id="new-submit">Add to schedule</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Services picker, copied from the public booking page. Cloned by panel-view.js
+       for the new appointment form and for edit mode. -->
+  <template id="service-picker-template">
+    <div class="service-select">
+      <button type="button" class="service-trigger is-placeholder" aria-haspopup="true"
+        aria-expanded="false">Select up to 2 services</button>
+      <div class="service-panel" role="group">
+        <p class="service-panel-hint">Choose up to 2 services</p>
+
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="HAIRCUT">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Haircut</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="BABY_HIGHLIGHT">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Baby Highlight</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="DYES">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Dyes</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="KERATIN_TREATMENT">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Keratin Treatment</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="BLOW_DRYING">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Blow Drying</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="WASHING">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Washing</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="TREATMENT_MOISTURIZING">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Treatment Moisturizing</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="HAIRCUT_BLOW_DRY">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Haircut Blow Dry</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="COLOR_TOUCH_UP">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Color Touch Up</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="PERM">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Perm</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="BEARD_TRIM">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Beard Trim</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="EYEBROW_SHAPING">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Eyebrow Shaping</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="HAIRCUT_BEARD_TRIM">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Haircut Beard Trim</span>
+        </label>
+        <label class="service-option">
+          <input type="checkbox" class="service-checkbox" value="HAIRCUT_BEARD_TRIM_EYEBROW_SHAPING">
+          <span class="service-option-box" aria-hidden="true"></span>
+          <span class="service-option-label">Haircut Beard Trim Eyebrow Shaping</span>
+        </label>
+      </div>
+    </div>
+  </template>
+
+  <!-- popover puts the toast in the top layer, above any open <dialog> -->
+  <div id="toast" class="toast" popover="manual" role="alert"></div>
+</body>
+
+</html>
