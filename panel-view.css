@@ -1,4 +1,7 @@
-/* Colors come from palette.css (the public site's :root). Shades the public site
+/* PHONE FIRST: the base rules are the phone layout. min-width queries at the
+   bottom add tablet (700px+) and desktop (1024px+).
+
+   Colors come from palette.css (the public site's :root). Shades the public site
    does not have are mixed from those variables, so they follow any palette change.
    Every text/background pair below clears WCAG AA (4.5:1). */
 :root {
@@ -50,18 +53,19 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 12px 28px;
+  padding: 10px 16px;
   color: var(--color-light);
   background: var(--color-dark);
 }
 
 .panel-logo {
   display: block;
-  width: 260px;
+  width: 170px;
   height: auto;
 }
 
 .brand-sub {
+  display: none;
   padding-left: 16px;
   font-size: 0.85rem;
   font-weight: 500;
@@ -71,32 +75,102 @@ body {
   border-left: 1px solid color-mix(in srgb, var(--color-light) 35%, transparent);
 }
 
-/* LAYOUT: calendar left, table right; stacked on narrow screens */
+/* LAYOUT: one column on phones; the day bar comes first so the list starts high */
 .panel-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 28px 40px;
+  padding: 12px 12px 32px;
 }
 
-.calendar-col,
-.table-col {
+.day-col,
+.list-col {
+  min-width: 0;
   background: var(--color-light);
   border: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
   border-radius: var(--radius);
   box-shadow: 0 8px 24px rgba(46, 32, 25, 0.08);
-  padding: 20px;
+  padding: 10px;
 }
 
 .section-title {
-  margin: 0 0 12px;
+  margin: 0;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-dark);
+}
+
+/* DAY BAR: previous day / tap to open the calendar / next day */
+.day-bar {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+}
+
+.day-bar .btn-icon {
+  width: 44px;
+  min-height: 44px;
+}
+
+.day-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 8px;
+  font: inherit;
+  color: var(--color-dark);
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.day-toggle:hover {
+  background: var(--color-form);
+}
+
+.day-toggle-text {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.day-toggle-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-decoration: underline;
+}
+
+.day-col.is-open .day-toggle-hint::after {
+  content: " ▴";
+}
+
+/* The heading names the calendar for screen readers; it is shown on desktop only. */
+.calendar-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Folded away on phones until the day bar is tapped */
+.day-col .calendar-wrapper {
+  display: none;
+  padding-top: 8px;
+}
+
+.day-col.is-open .calendar-wrapper {
+  display: flex;
 }
 
 /* BUTTONS */
@@ -194,6 +268,17 @@ body {
   margin-top: 12px;
 }
 
+/* The new appointment form keeps its submit button in reach at the bottom */
+.new-form .btn-block {
+  position: sticky;
+  bottom: 0;
+  margin: 12px -16px 0;
+  width: calc(100% + 32px);
+  min-height: 56px;
+  border-radius: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* CALENDAR: flatpickr overrides lifted from the public booking page */
 .calendar-wrapper {
   display: flex;
@@ -276,32 +361,51 @@ body {
   width: 100%;
 }
 
-/* TABLE */
+/* LIST */
 .table-toolbar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin: 0 2px 10px;
 }
 
-.table-toolbar .section-title {
-  margin-bottom: 2px;
+/* On phones the day bar already says what this is; the counts carry the line. */
+.list-title,
+.btn-add-long,
+.apt-table thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .table-day {
   margin: 0;
-  color: var(--color-muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-dark);
 }
 
-/* Fixed height (header + 7 rows) so the layout does not jump between pages */
+.btn-add {
+  flex-shrink: 0;
+  padding: 0 14px;
+}
+
+.btn-add span[aria-hidden] {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
 .table-area {
   position: relative;
-  height: calc(var(--row-height) * 8 + 2px);
-  overflow: auto;
+  min-height: 180px;
   background: var(--color-light);
   border: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
   border-radius: 10px;
+  overflow: hidden;
 }
 
 .table-area[aria-busy="true"] .apt-table tbody {
@@ -315,22 +419,15 @@ body {
 
 .apt-table th,
 .apt-table td {
-  height: var(--row-height);
-  padding: 0 14px;
+  height: 52px;
+  padding: 0 8px;
   text-align: left;
-  white-space: nowrap;
   border-bottom: 1px solid var(--color-form);
 }
 
-.apt-table td:nth-child(4) {
-  white-space: normal;
-}
-
 .apt-table th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  font-size: 0.78rem;
+  height: 36px;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -338,12 +435,79 @@ body {
   background: var(--color-form);
 }
 
+/* Phone columns: time | name | status. The date is the day bar, so it is hidden. */
+/* Time and status shrink to their content (width: 1%); the name takes the rest. */
+.apt-table th:nth-child(1),
+.apt-table .col-time {
+  width: 1%;
+  padding-left: 10px;
+  padding-right: 8px;
+}
+
+.apt-table th:nth-child(4),
+.apt-table .col-status {
+  width: 1%;
+  padding-left: 6px;
+  padding-right: 8px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.apt-table .col-time {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.apt-table .col-status .status-pill {
+  font-size: 0.7rem;
+  padding: 3px 7px;
+}
+
+.apt-table .t-hm {
+  display: block;
+  font-size: 1rem;
+}
+
+.apt-table .t-suffix {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* Names wrap to a second line rather than being cut off */
+.apt-table .col-name {
+  font-weight: 500;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.apt-table .col-date {
+  display: none;
+}
+
 .apt-table tbody tr {
   cursor: pointer;
 }
 
-.apt-table tbody tr:hover {
+.apt-table tbody tr:hover,
+.apt-table tbody tr:active {
   background: var(--color-panel);
+}
+
+/* Pressed rows and buttons give their own feedback, so skip the browser's tap flash */
+.apt-table tbody tr,
+.btn,
+.day-toggle,
+.thumb,
+.service-option {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .apt-table tbody tr:focus-visible {
@@ -412,7 +576,7 @@ body {
 .empty-title {
   margin: 0 0 6px;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-dark);
 }
@@ -457,21 +621,12 @@ body {
   background: color-mix(in srgb, var(--color-dark) 14%, var(--color-light));
 }
 
-/* TABLE FOOTER: legend + pagination */
-.table-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 14px;
-}
-
+/* LEGEND for the only color-only row state */
 .legend {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0;
+  margin: 10px 2px 0;
   font-size: 0.85rem;
   color: var(--color-muted);
 }
@@ -485,29 +640,18 @@ body {
   border: 1px solid color-mix(in srgb, var(--color-orange) 60%, transparent);
 }
 
-.pagination {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-left: auto;
-}
-
-.page-info {
-  min-width: 110px;
-  text-align: center;
-  font-weight: 600;
-}
-
-/* MODALS (native <dialog>) */
+/* MODALS (native <dialog>): full-screen sheets on phones */
 .modal {
-  width: min(720px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
-  max-height: calc(100dvh - 32px);
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
   padding: 0;
   color: var(--color-dark);
   background: var(--color-light);
   border: none;
-  border-radius: var(--radius);
+  border-radius: 0;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
 }
 
@@ -519,7 +663,7 @@ body {
 
 .modal-inner {
   position: relative;
-  padding: 22px 28px 22px;
+  padding: 16px 16px 0;
 }
 
 .modal-close {
@@ -542,9 +686,9 @@ body {
 }
 
 .modal-title {
-  margin: 2px 0 16px 44px;
+  margin: 2px 0 14px 44px;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--color-dark);
 }
@@ -552,19 +696,36 @@ body {
 /* Detail (read mode) */
 .detail-list {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 10px 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px 16px;
   margin: 0;
 }
 
 .detail-list dt {
+  font-size: 0.78rem;
   font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   color: var(--color-muted);
 }
 
 .detail-list dd {
-  margin: 0;
+  margin: 2px 0 0;
   overflow-wrap: anywhere;
+}
+
+.detail-list a {
+  font-weight: 600;
+  color: var(--color-submit-btn);
+}
+
+/* Each label sits on top of its value; pairs flow two to a row */
+.detail-item {
+  min-width: 0;
+}
+
+.detail-item.is-wide {
+  grid-column: 1 / -1;
 }
 
 .thumbs {
@@ -595,33 +756,45 @@ body {
   border-color: var(--color-dark);
 }
 
-/* Action row: left and right groups pushed to either side */
-.modal-actions {
+/* Phones: the detail sheet fills the screen and its buttons sit at the bottom edge */
+#detail-dialog .modal-inner {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 22px;
-  padding-top: 18px;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+#detail-dialog .modal-actions {
+  margin-top: auto;
+}
+
+#detail-dialog .form-error {
+  margin-bottom: 18px;
+}
+
+/* Action row. Phones: stuck to the bottom of the sheet, each group a full row of
+   equal buttons. Desktop: left and right groups pushed to either side. */
+.modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 18px -16px 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--color-light);
   border-top: 1px solid var(--color-form);
 }
 
 .action-group {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 8px;
 }
 
 .action-group[hidden] {
   display: none;
-}
-
-.action-group-right {
-  margin-left: auto;
-}
-
-/* Edit mode is short, so the popup calendar may hang outside the dialog box
-   instead of making it scroll. */
-.modal.is-editing {
-  overflow: visible;
 }
 
 .edit-hint {
@@ -633,9 +806,12 @@ body {
   display: none;
 }
 
-/* Delete confirmation */
-.modal-small {
+/* Delete confirmation: a small centered card, even on phones */
+.modal.modal-small {
   width: min(420px, calc(100vw - 32px));
+  height: fit-content;
+  margin: auto;
+  border-radius: var(--radius);
 }
 
 .confirm-inner {
@@ -666,12 +842,8 @@ body {
   gap: 12px;
 }
 
-/* Lightbox: most of the screen on desktop/iPad, the whole viewport on phones */
+/* Lightbox: the whole viewport on phones, most of the screen on larger screens */
 .lightbox {
-  width: auto;
-  max-width: 94vw;
-  max-height: 94vh;
-  max-height: 94dvh;
   background: var(--color-dark-hover);
 }
 
@@ -680,7 +852,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 56px 16px 16px;
+  height: 100%;
+  padding: 56px 0 0;
 }
 
 .lightbox .modal-close {
@@ -693,9 +866,8 @@ body {
 
 #lightbox-img {
   display: block;
-  max-width: calc(94vw - 32px);
-  max-height: calc(94vh - 72px);
-  max-height: calc(94dvh - 72px);
+  max-width: 100vw;
+  max-height: calc(100dvh - 56px);
   width: auto;
   height: auto;
   object-fit: contain;
@@ -749,7 +921,7 @@ body {
 
 .new-top-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px 28px;
   align-items: end;
   margin-bottom: 14px;
@@ -788,7 +960,7 @@ body {
 
 .date-time-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -812,7 +984,7 @@ body {
 
 .service-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2px 8px;
   height: 172px;
   overflow-y: auto;
@@ -953,6 +1125,7 @@ body {
   margin-bottom: 4px;
 }
 
+.conflict-services,
 .conflict-id {
   display: block;
   font-size: 0.85rem;
@@ -1003,9 +1176,9 @@ body {
 /* TOAST (popover, so it sits above open dialogs) */
 .toast {
   position: fixed;
-  inset: 20px 20px auto auto;
+  inset: 12px 12px auto 12px;
   margin: 0;
-  max-width: 380px;
+  max-width: none;
   padding: 14px 18px;
   align-items: center;
   gap: 10px;
@@ -1026,89 +1199,244 @@ body {
   flex-shrink: 0;
 }
 
-/* DESKTOP + IPAD: the new appointment modal never scrolls; the popup calendar
-   may hang outside the dialog box. */
-@media (min-width: 701px) and (min-height: 640px) {
+/* TABLET (700px+): roomier, still one column with the folding calendar */
+@media (min-width: 700px) {
+  .panel-header {
+    padding: 12px 24px;
+  }
+
+  .panel-logo {
+    width: 230px;
+  }
+
+  .brand-sub {
+    display: inline;
+  }
+
+  .panel-layout {
+    gap: 16px;
+    padding: 16px 20px 40px;
+  }
+
+  .day-col,
+  .list-col {
+    padding: 16px;
+  }
+
+  .apt-table th,
+  .apt-table td {
+    padding: 0 14px;
+  }
+
+  .apt-table th:nth-child(1),
+  .apt-table .col-time {
+    padding: 0 18px 0 14px;
+  }
+
+  .apt-table .col-time {
+    font-size: 0.95rem;
+  }
+
+  .apt-table .t-hm,
+  .apt-table .t-suffix {
+    display: inline;
+    font-size: inherit;
+    font-weight: 700;
+    opacity: 1;
+  }
+
+  .apt-table .col-status .status-pill {
+    font-size: 0.8rem;
+    padding: 3px 10px;
+  }
+
+  .apt-table th:nth-child(4),
+  .apt-table .col-status {
+    padding: 0 14px;
+  }
+
+  .apt-table .col-date {
+    display: table-cell;
+    width: 1%;
+    padding: 0 18px;
+    white-space: nowrap;
+  }
+
+  .list-title,
+  .btn-add-long {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .apt-table thead {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    display: table-header-group;
+  }
+
+  .apt-table th,
+  .apt-table td {
+    height: 54px;
+  }
+
+  .apt-table th {
+    height: 38px;
+  }
+
+  .apt-table .col-status {
+    text-align: left;
+  }
+
+  .table-day {
+    font-weight: 500;
+    color: var(--color-muted);
+  }
+
+  /* Modals become centered cards. fit-content, not auto: the browser pins a modal
+     dialog to the top and bottom edges, so height: auto would stretch it. */
+  .modal {
+    width: min(720px, calc(100vw - 32px));
+    height: fit-content;
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    border-radius: var(--radius);
+  }
+
+  .modal-inner {
+    padding: 22px 28px 0;
+  }
+
+  .modal-title {
+    font-size: 1.8rem;
+  }
+
+  #detail-dialog .modal-inner {
+    display: block;
+    min-height: 0;
+  }
+
+  .modal-actions,
+  #detail-dialog .modal-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin: 22px -28px 0;
+    padding: 16px 28px 20px;
+  }
+
+  .action-group {
+    display: flex;
+    gap: 10px;
+  }
+
+  .action-group-right {
+    margin-left: auto;
+  }
+
+  .detail-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .new-top-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 16px 28px;
+  }
+
+  .date-time-row,
+  .service-list {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .new-form .btn-block {
+    position: static;
+    width: 100%;
+    margin: 12px 0 24px;
+    min-height: 44px;
+    border-radius: 10px;
+    padding-bottom: 0;
+  }
+
+  .lightbox {
+    width: fit-content;
+    height: fit-content;
+    max-width: 94vw;
+    max-height: 94dvh;
+    border-radius: var(--radius);
+  }
+
+  .lightbox-inner {
+    padding: 56px 16px 16px;
+  }
+
+  #lightbox-img {
+    max-width: calc(94vw - 32px);
+    max-height: calc(94dvh - 72px);
+  }
+
+  .toast {
+    inset: 20px 20px auto auto;
+    max-width: 380px;
+  }
+
+  /* Edit mode is short, so the popup calendar may hang outside the dialog box
+     instead of making it scroll. */
+  .modal.is-editing {
+    overflow: visible;
+  }
+}
+
+/* The new appointment modal does not scroll once the screen is big enough for it;
+   the popup calendar may hang outside the dialog box. */
+@media (min-width: 700px) and (min-height: 640px) {
   .modal-new {
     overflow: visible;
   }
 }
 
-/* NARROW SCREENS: stack calendar above table */
-@media (max-width: 900px) {
+/* DESKTOP (1024px+): calendar always open on the left, list on the right */
+@media (min-width: 1024px) {
   .panel-layout {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 16px;
-  }
-}
-
-@media (max-width: 700px) {
-  .new-top-row {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+    padding: 24px 28px 40px;
   }
 
-  .service-list {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .panel-header {
-    padding: 10px 16px;
+  .day-col,
+  .list-col {
+    padding: 20px;
   }
 
-  .panel-logo {
-    width: 180px;
+  .day-toggle {
+    cursor: default;
   }
 
-  .brand-sub {
+  .day-toggle:hover {
+    background: transparent;
+  }
+
+  .day-toggle-hint {
     display: none;
   }
 
-  .calendar-col,
-  .table-col {
-    padding: 14px;
+  .day-col .calendar-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 12px;
   }
 
-  .table-toolbar {
-    flex-direction: column;
+  .section-title {
+    font-size: 1.6rem;
   }
 
-  .modal-inner {
-    padding: 20px 16px;
-  }
-
-  .date-time-row {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .toast {
-    inset: 12px 12px auto 12px;
-    max-width: none;
-  }
-
-  .flatpickr-calendar.inline {
-    max-width: 100%;
-  }
-
-  /* Lightbox fills the viewport */
-  .lightbox {
-    width: 100vw;
-    height: 100dvh;
-    max-width: none;
-    max-height: none;
-    margin: 0;
-    border-radius: 0;
-  }
-
-  .lightbox-inner {
-    height: 100%;
-    padding: 56px 0 0;
-  }
-
-  #lightbox-img {
-    max-width: 100vw;
-    max-height: calc(100dvh - 56px);
+  .table-day {
+    font-size: 0.95rem;
   }
 }
 

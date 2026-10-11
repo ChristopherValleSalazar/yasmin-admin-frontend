@@ -2,11 +2,11 @@
 // front desk "new appointment" form. Every request goes through api() below.
 // Calendar, services, start time and the availability check live in booking.js.
 
-const PAGE_SIZE = 7;
 const DAY_URL = `${API_BASE_URL}/api/v1/admin/appointments/day`;
 const appointmentUrl = id => `${API_BASE_URL}/api/v1/admin/appointments/${encodeURIComponent(id)}`;
 // TODO: endpoint (the backend has no admin create endpoint yet)
 const CREATE_URL = `${API_BASE_URL}/api/(placeholder)`;
+const NAME_SUFFIX = { PHONE: "Phone", WALK_IN: "Walk-in" };
 
 // ---------------------------------------------------------------------------
 // Toast
@@ -55,9 +55,20 @@ async function api(url, { json, ...options } = {}) {
     return res;
 }
 
-// Error text from the backend's { type, error } shape, when it sent one.
+// The backend's `error` text is English developer text, so the Spanish message is
+// picked by its `type`, using the public site's wording where it has one.
+const ERROR_MESSAGES = {
+    SlotIsMondayException: "El salón cierra los lunes. Por favor, elige otro día.",
+    OutsideServiceHoursException: "Ese horario está fuera de nuestro horario de atención. Por favor, elige otro.",
+    EndsAfterClosingException: "Esa cita terminaría después de la hora de cierre. Por favor, elige un horario más temprano.",
+    PastDateException: "Ese horario ya pasó. Por favor, elige uno posterior.",
+    InvalidAppointmentException: "Elige al menos un servicio.",
+    InvalidServiceDurationException: "Elige al menos un servicio.",
+    AppointmentNotFoundException: "No pudimos encontrar esta cita. Actualiza la página."
+};
+
 async function errorText(res) {
-    try { return (await res.json()).error ?? ""; } catch { return ""; }
+    try { return ERROR_MESSAGES[(await res.json()).type] ?? ""; } catch { return ""; }
 }
 
 const NETWORK_ERROR = "No pudimos conectar con el servidor. Inténtalo de nuevo.";
@@ -92,8 +103,27 @@ function statusPill(status) {
     return pill;
 }
 
-// Row colour: deleted and rescheduled come from the status; overlapping comes from
-// the row's overlap flag (not in AppointmentRow yet; the mock sends `overlapping`).
+const SOURCE_LABELS = { ONLINE: "En línea", PHONE: "Por teléfono", WALK_IN: "Sin cita" };
+
+const formatPrice = value => value == null ? "" :
+    Number(value).toLocaleString(LOCALE, { style: "currency", currency: "USD" });
+
+// Same rule as AppointmentService.overlapCheck: these statuses no longer hold a slot.
+const NON_BLOCKING = new Set(["CANCELED", "RESCHEDULED", "COMPLETED", "NO_SHOW", "DELETED"]);
+
+const minutesOf = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+
+// The day endpoint has no overlap flag, so it is worked out here from the same list.
+function markOverlaps(rows) {
+    const active = rows.filter(r => !NON_BLOCKING.has(r.status));
+    for (const row of rows) {
+        row.overlapping = !NON_BLOCKING.has(row.status) && active.some(o => o !== row
+            && minutesOf(o.startTime) < minutesOf(row.endTime)
+            && minutesOf(row.startTime) < minutesOf(o.endTime));
+    }
+}
+
+// Row colour: deleted and rescheduled come from the status, overlapping from markOverlaps.
 function rowState(row) {
     if (row.status === "DELETED") return "deleted";
     if (row.status === "RESCHEDULED") return "rescheduled";
@@ -102,7 +132,8 @@ function rowState(row) {
 }
 
 // ---------------------------------------------------------------------------
-// Daily table + pagination
+// Day list. GET /appointments/day returns every appointment of the day as a full
+// record (no paging), so the list keeps them and the detail modal reads from it.
 // ---------------------------------------------------------------------------
 
 const rowsBody = document.getElementById("apt-rows");
@@ -110,45 +141,40 @@ const tableArea = document.getElementById("table-area");
 const table = document.getElementById("apt-table");
 const emptyState = document.getElementById("empty-state");
 const tableDay = document.getElementById("table-day");
-const pageInfo = document.getElementById("page-info");
-const prevBtn = document.getElementById("prev-btn");
-const nextBtn = document.getElementById("next-btn");
+const dayLabel = document.getElementById("day-label");
+const prevDayBtn = document.getElementById("prev-day");
+const nextDayBtn = document.getElementById("next-day");
+const dayCol = document.getElementById("day-col");
+const dayToggle = document.getElementById("day-toggle");
 
 const state = {
     date: toIso(today),
-    page: 0,
-    totalPages: 0
+    rows: []
 };
 
 // Only the newest request may render, so fast date clicks cannot show a stale day.
 let loadSeq = 0;
 
-async function loadPage() {
+async function loadDay() {
     const seq = ++loadSeq;
-    const params = new URLSearchParams({ date: state.date, page: state.page, size: PAGE_SIZE });
-    tableDay.textContent = formatLongDate(state.date);
+    renderDayHeading();
     tableArea.setAttribute("aria-busy", "true");
 
     try {
-        const res = await api(`${DAY_URL}?${params}`);
+        const res = await api(`${DAY_URL}?${new URLSearchParams({ date: state.date })}`);
         if (seq !== loadSeq) return;
         if (!res.ok) {
             showToast("No se pudieron cargar las citas. Actualiza la página e inténtalo de nuevo.");
             return;
         }
-        const data = await res.json();
+        const rows = await res.json();
         if (seq !== loadSeq) return;
 
-        state.totalPages = data.totalPages ?? 0;
-        state.page = data.number ?? state.page;
-
-        // A change can empty the last page; step back one.
-        if (data.content.length === 0 && state.page > 0 && state.page >= state.totalPages) {
-            state.page = Math.max(state.totalPages - 1, 0);
-            return loadPage();
-        }
-
-        renderRows(data.content);
+        // findByDate has no ORDER BY, so sort by start time here.
+        rows.sort((a, b) => a.startTime.localeCompare(b.startTime));
+        markOverlaps(rows);
+        state.rows = rows;
+        renderRows();
     } catch (err) {
         if (err instanceof SessionExpiredError || seq !== loadSeq) return;
         showToast(NETWORK_ERROR);
@@ -157,14 +183,24 @@ async function loadPage() {
     }
 }
 
-function renderRows(rows) {
+function renderDayHeading() {
+    dayLabel.textContent = capitalize(isoToLocalDate(state.date)
+        .toLocaleDateString(LOCALE, { weekday: "long", day: "numeric", month: "long" }));
+    tableDay.textContent = "Cargando…";
+    const d = isoToLocalDate(state.date);
+    nextDayBtn.disabled = shiftDay(d, 1) === null;
+}
+
+function renderRows() {
+    const rows = state.rows;
     rowsBody.replaceChildren();
     const empty = rows.length === 0;
     emptyState.hidden = !empty;
     table.classList.toggle("is-empty", empty);
 
-    // The row DTO has no date; every row belongs to the day that was requested.
-    const dateText = formatShortDate(state.date);
+    const overlapCount = rows.filter(r => r.overlapping).length;
+    tableDay.textContent = `${rows.length} ${rows.length === 1 ? "cita" : "citas"}`
+        + (overlapCount ? ` · ${overlapCount} se cruzan` : "");
 
     for (const row of rows) {
         const tr = document.createElement("tr");
@@ -175,25 +211,35 @@ function renderRows(rows) {
         // Overlap has no status word, so screen readers get it in the row label.
         const overlapNote = rs === "overlapping" ? ", se cruza con otra cita" : "";
         tr.setAttribute("aria-label",
-            `${row.name}, ${formatTime(row.startTime)}, ${STATUS_LABELS[row.status] ?? row.status}${overlapNote}. Abrir detalles`);
+            `${formatTime(row.startTime)}, ${row.name}, ${STATUS_LABELS[row.status] ?? row.status}${overlapNote}. Abrir detalles`);
 
-        const cells = [row.name, dateText, formatTime(row.startTime), formatServices(row.serviceType)];
-        for (const text of cells) {
-            const td = document.createElement("td");
-            td.textContent = text;
-            tr.appendChild(td);
-        }
-        const statusTd = document.createElement("td");
-        statusTd.appendChild(statusPill(row.status));
-        tr.appendChild(statusTd);
+        // "12:15 p.m." -> hour and a.m./p.m. in separate spans, stacked on phones
+        const time = document.createElement("td");
+        time.className = "col-time";
+        const [hm, ...suffix] = formatTime(row.startTime).split(/\s+/);
+        const hmSpan = document.createElement("span");
+        hmSpan.className = "t-hm";
+        hmSpan.textContent = hm;
+        const suffixSpan = document.createElement("span");
+        suffixSpan.className = "t-suffix";
+        suffixSpan.textContent = suffix.join(" ");
+        time.append(hmSpan, " ", suffixSpan);
 
+        const name = document.createElement("td");
+        name.className = "col-name";
+        name.textContent = row.name;
+
+        const date = document.createElement("td");
+        date.className = "col-date";
+        date.textContent = formatShortDate(row.date ?? state.date);
+
+        const status = document.createElement("td");
+        status.className = "col-status";
+        status.appendChild(statusPill(row.status));
+
+        tr.append(time, name, date, status);
         rowsBody.appendChild(tr);
     }
-
-    const total = Math.max(state.totalPages, 1);
-    pageInfo.textContent = `Página ${state.page + 1} de ${total}`;
-    prevBtn.disabled = state.page <= 0;
-    nextBtn.disabled = state.page >= total - 1;
 }
 
 rowsBody.addEventListener("click", (e) => {
@@ -209,26 +255,50 @@ rowsBody.addEventListener("keydown", (e) => {
     openDetail(tr.dataset.id);
 });
 
-prevBtn.addEventListener("click", () => {
-    if (state.page <= 0) return;
-    state.page--;
-    loadPage();
-});
+function selectDay(iso) {
+    state.date = iso;
+    loadDay();
+}
 
-nextBtn.addEventListener("click", () => {
-    if (state.page >= state.totalPages - 1) return;
-    state.page++;
-    loadPage();
-});
-
-createDatePicker(document.getElementById("panel-date"), {
+const panelPicker = createDatePicker(document.getElementById("panel-date"), {
     inline: true,
     defaultDate: today,
     onChange(iso) {
-        state.date = iso;
-        state.page = 0; // a new day always starts on page one
-        loadPage();
+        selectDay(iso);
+        closeCalendar();
     }
+});
+
+// Previous / next day, skipping closed Mondays and stopping at the booking horizon.
+function shiftDay(date, step) {
+    const d = new Date(date);
+    do { d.setDate(d.getDate() + step); } while (d.getDay() === 1);
+    return d > salonMaxDate ? null : d;
+}
+
+function stepDay(step) {
+    const next = shiftDay(isoToLocalDate(state.date), step);
+    if (!next) return;
+    const iso = toIso(next);
+    panelPicker.set(iso);
+    selectDay(iso);
+}
+
+prevDayBtn.addEventListener("click", () => stepDay(-1));
+nextDayBtn.addEventListener("click", () => stepDay(1));
+
+// Phone and tablet keep the calendar folded under the day bar; desktop always shows it.
+const desktop = window.matchMedia("(min-width: 1024px)");
+
+function closeCalendar() {
+    dayCol.classList.remove("is-open");
+    dayToggle.setAttribute("aria-expanded", "false");
+}
+
+dayToggle.addEventListener("click", () => {
+    if (desktop.matches) return;
+    const open = dayCol.classList.toggle("is-open");
+    dayToggle.setAttribute("aria-expanded", String(open));
 });
 
 // ---------------------------------------------------------------------------
@@ -262,29 +332,35 @@ const lightboxImg = document.getElementById("lightbox-img");
 
 let current = null; // full appointment currently shown in the modal
 
-async function fetchDetail(id) {
-    const res = await api(appointmentUrl(id));
-    if (!res.ok) throw new Error(String(res.status));
-    return res.json();
+// The day list already holds full records, so opening one needs no request.
+function openDetail(id) {
+    current = state.rows.find(r => r.appointmentId === id);
+    if (!current) return;
+    showReadMode();
+    detailDialog.showModal();
 }
 
-async function openDetail(id) {
-    try {
-        current = await fetchDetail(id);
-        showReadMode();
-        detailDialog.showModal();
-    } catch (err) {
-        if (!(err instanceof SessionExpiredError)) showToast("No se pudo cargar esta cita. Inténtalo de nuevo.");
-    }
-}
-
-function addField(dl, label, value) {
+// Each pair sits in its own <div> so the grid can place label-over-value items,
+// two across on phones; `wide` items take the whole row.
+function addField(dl, label, value, wide = false) {
+    const item = document.createElement("div");
+    item.className = wide ? "detail-item is-wide" : "detail-item";
     const dt = document.createElement("dt");
     dt.textContent = label;
     const dd = document.createElement("dd");
     if (value instanceof Node) dd.appendChild(value);
     else dd.textContent = value || "—";
-    dl.append(dt, dd);
+    item.append(dt, dd);
+    dl.appendChild(item);
+}
+
+// Tap to call on a phone.
+function phoneLink(number) {
+    if (!number) return "";
+    const link = document.createElement("a");
+    link.href = `tel:${number}`;
+    link.textContent = number;
+    return link;
 }
 
 // hairImages is not in AppointmentFullDetailsResponse yet; this reads the entity's
@@ -326,20 +402,22 @@ function showReadMode() {
 
     const dl = document.createElement("dl");
     dl.className = "detail-list";
-    addField(dl, "Nombre", a.name);
-    addField(dl, "Teléfono", a.phoneNumber);
-    addField(dl, "Idioma", LANGUAGE_LABELS[a.language] ?? a.language);
-    addField(dl, "Fecha", a.date ? formatLongDate(a.date) : "");
+    // Most useful first: what and when, then how to reach her, then the record details.
+    addField(dl, "Fecha", a.date ? formatLongDate(a.date) : "", true);
     addField(dl, "Hora de inicio", formatTime(a.startTime));
     addField(dl, "Hora de fin", formatTime(a.endTime));
-    addField(dl, "Servicios", formatServices(a.serviceType));
+    addField(dl, "Servicios", formatServices(a.serviceType), true);
     addField(dl, "Estado", statusPill(a.status));
-    addField(dl, "Notas adicionales", a.additionalNotes);
+    addField(dl, "Precio total", formatPrice(a.totalPrice));
+    addField(dl, "Teléfono", phoneLink(a.phoneNumber));
+    addField(dl, "Origen", SOURCE_LABELS[a.appointmentSource] ?? a.appointmentSource);
+    addField(dl, "Notas adicionales", a.additionalNotes, true);
+    addField(dl, "Fotos de referencia", imageList(a.hairImages), true);
+    addField(dl, "Nombre", a.name);
+    addField(dl, "Idioma", LANGUAGE_LABELS[a.language] ?? a.language);
     addField(dl, "Acepta SMS", a.smsConsent ? "Sí" : "No");
     addField(dl, "Recordatorio enviado", formatDateTime(a.reminderSentAt));
-    addField(dl, "Código de la cita", a.viewCode);
-    addField(dl, "ID de la cita", a.appointmentId);
-    addField(dl, "Fotos de referencia", imageList(a.hairImages));
+    addField(dl, "ID de la cita", a.appointmentId, true);
     detailRead.replaceChildren(dl);
 
     detailRead.hidden = false;
@@ -368,7 +446,7 @@ readLeft.addEventListener("click", async (e) => {
         const res = await api(`${appointmentUrl(current.appointmentId)}/status?action=${action}`, { method: "PATCH" });
         if (res.ok) {
             detailDialog.close();
-            loadPage();
+            loadDay();
         } else if (res.status === 409) {
             showToast(`No se puede marcar como "${STATUS_LABELS[action]}": solo las citas confirmadas pueden cambiar a ese estado.`);
         } else {
@@ -404,7 +482,7 @@ confirmYes.addEventListener("click", async () => {
         confirmDialog.close();
         if (res.ok) {
             detailDialog.close();
-            loadPage();
+            loadDay();
         } else {
             showToast("No se pudo eliminar la cita. Inténtalo de nuevo.");
         }
@@ -457,9 +535,8 @@ editForm.addEventListener("submit", async (e) => {
 
     const { date, startTime, services } = editFields.values();
 
-    // Note: the backend's edit endpoint currently binds only name, phoneNumber,
-    // language and status, and has no @RequestBody yet, so it needs updating to
-    // accept this reschedule body.
+    // AppointmentFullDetailsRequest: { services, date, startTime }. The backend
+    // recalculates the end time.
     setDetailBusy(true);
     try {
         const res = await api(appointmentUrl(current.appointmentId), {
@@ -467,10 +544,14 @@ editForm.addEventListener("submit", async (e) => {
             json: { date, startTime, services }
         });
         if (res.ok) {
-            // Refetch so the read view shows the end time the backend recalculated.
-            current = await fetchDetail(current.appointmentId);
+            // The read view updates right away; the end time uses the same service
+            // durations as the backend. The list reload brings the stored record.
+            current = {
+                ...current, date, startTime: `${startTime}:00`, serviceType: services,
+                endTime: endTimeFor(startTime, services)
+            };
             showReadMode();
-            loadPage();
+            loadDay();
         } else {
             const detail = await errorText(res);
             showDetailError(`No se pudieron guardar los cambios.${detail ? ` ${detail}` : ""} Tus cambios siguen aquí.`);
@@ -524,7 +605,7 @@ newForm.addEventListener("submit", async (e) => {
     const problem = newFields.missing();
     if (problem) return showNewError(problem);
 
-    const type = newForm.elements.bookingType.value;
+    const source = newForm.elements.bookingType.value; // "PHONE" | "WALK_IN"
     const name = newForm.elements.name.value.trim();
     const { date, startTime, services } = newFields.values(); // startTime is already HH:mm
 
@@ -532,13 +613,15 @@ newForm.addEventListener("submit", async (e) => {
     try {
         const res = await api(CREATE_URL, {
             method: "POST",
-            json: { name: `${name} (${type})`, date, startTime, services }
+            // Name suffix as the original spec asked; appointmentSource matches the
+            // backend's new AppointmentSource enum for when a create endpoint exists.
+            json: { name: `${name} (${NAME_SUFFIX[source]})`, date, startTime, services, appointmentSource: source }
         });
         if (res.ok) {
             newDialog.close();
             newForm.reset();
             newFields.set();
-            loadPage(); // the panel's selected day, not the new appointment's
+            loadDay(); // the panel's selected day, not the new appointment's
         } else {
             const detail = await errorText(res);
             showNewError(`No se pudo agregar la cita.${detail ? ` ${detail}` : ""} Revisa los datos e inténtalo de nuevo.`);
@@ -554,4 +637,4 @@ newForm.addEventListener("submit", async (e) => {
 // Start on today's appointments
 // ---------------------------------------------------------------------------
 
-loadPage();
+loadDay();

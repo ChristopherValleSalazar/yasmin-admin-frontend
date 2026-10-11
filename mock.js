@@ -5,7 +5,8 @@
 //
 // Test hooks:
 //   login        admin@yasminbeauty.salon / admin123 succeeds, anything else is a 401
-//   panel        today has 10 appointments (2 pages), tomorrow 3, yesterday 4,
+// Shapes follow the backend's dev/build/mac branch (AdminController).
+//   panel        today has 10 appointments, tomorrow 3, yesterday 4,
 //                every other day is empty
 //   row states   today has an overlapping pair (Ana + Luis), one rescheduled
 //                (Valeria) and one deleted (Daniela) appointment
@@ -13,6 +14,7 @@
 //                same rule as AdminService.setAppointmentStatus
 //   check        Camila Reyes' availability check fails twice, then succeeds:
 //                edit her, pick a time, watch the auto-retry, then press Reintentar
+//   edit         a Monday or a slot past closing returns a 400, like validateBusinessHours
 //   create       a name containing "error" returns a 400
 //   401          open panel-view.html?mock401 to see the session expiry redirect
 
@@ -35,13 +37,20 @@ const USE_MOCKS = true;
         return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
     }
 
-    // Same durations as the backend's ServiceType enum
+    // Same durations and prices as the backend's ServiceType enum (dev/build/mac)
     const DURATIONS = {
-        HAIRCUT: 55, BABY_HIGHLIGHT: 250, DYES: 160, KERATIN_TREATMENT: 90, BLOW_DRYING: 70,
-        WASHING: 30, TREATMENT_MOISTURIZING: 100, HAIRCUT_BLOW_DRY: 80, COLOR_TOUCH_UP: 90,
-        PERM: 120, BEARD_TRIM: 30, EYEBROW_SHAPING: 20, HAIRCUT_BEARD_TRIM: 70,
-        HAIRCUT_BEARD_TRIM_EYEBROW_SHAPING: 80
+        HAIRCUT: 60, BABY_HIGHLIGHT: 240, DYES: 180, KERATIN_TREATMENT: 90, BLOW_DRYING: 60,
+        WASHING: 30, TREATMENT_MOISTURIZING: 90, HAIRCUT_BLOW_DRY: 90, COLOR_TOUCH_UP: 90,
+        PERM: 120, BEARD_TRIM: 30, EYEBROW_SHAPING: 30, HAIRCUT_BEARD_TRIM: 60,
+        HAIRCUT_BEARD_TRIM_EYEBROW_SHAPING: 90
     };
+    const PRICES = {
+        HAIRCUT: 25, BABY_HIGHLIGHT: 180, DYES: 80, KERATIN_TREATMENT: 50, BLOW_DRYING: 35,
+        WASHING: 8, TREATMENT_MOISTURIZING: 50, HAIRCUT_BLOW_DRY: 35, COLOR_TOUCH_UP: 50,
+        PERM: 50, BEARD_TRIM: 10, EYEBROW_SHAPING: 10, HAIRCUT_BEARD_TRIM: 30,
+        HAIRCUT_BEARD_TRIM_EYEBROW_SHAPING: 45
+    };
+    const priceFor = services => services.reduce((sum, s) => sum + (PRICES[s] ?? 0), 0);
 
     const toMinutes = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
     const fromMinutes = n => `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}:00`;
@@ -75,7 +84,8 @@ const USE_MOCKS = true;
             endTime: endTimeFor(startTime, services),
             reminderSentAt: extra.reminderSentAt ?? null,
             status,
-            viewCode: Math.random().toString(36).slice(2, 12).toUpperCase(),
+            appointmentSource: extra.source ?? (/\(Walk-in\)/.test(name) ? "WALK_IN" : /\(Phone\)/.test(name) ? "PHONE" : "ONLINE"),
+            totalPrice: priceFor(services).toFixed(2),
             additionalNotes: extra.notes ?? "",
             smsConsent: extra.smsConsent ?? true,
             // Not in AppointmentFullDetailsResponse yet; mirrors the entity's HairImage.
@@ -84,17 +94,17 @@ const USE_MOCKS = true;
     }
 
     const db = [
-        // Today: 10 appointments, two pages of 7, one of each row state on page 1
+        // Today: 10 appointments with one of each row state
         apt(0, "10:00", "Maria Lopez", "+13235550101", ["HAIRCUT"], "CONFIRMED", { reminderSentAt: `${salonIso(-1)}T10:00:00` }),
         apt(0, "11:00", "Ana Ramirez", "+13235550102", ["DYES"], "BOOKED", { notes: "Quiere un tono cobrizo. Alergia al amoníaco." }),
         apt(0, "11:30", "Luis Hernandez", "+13235550103", ["BEARD_TRIM"], "CONFIRMED", { language: "EN" }),
         apt(0, "12:15", "Valeria Torres", "+13235550106", ["KERATIN_TREATMENT"], "RESCHEDULED"),
-        apt(0, "13:45", "Sofia Garcia", "+13235550104", ["HAIRCUT_BLOW_DRY"], "BOOKED", { smsConsent: false }),
+        apt(0, "14:00", "Sofia Garcia", "+13235550104", ["HAIRCUT_BLOW_DRY"], "BOOKED", { smsConsent: false }),
         apt(0, "13:50", "Daniela Cruz", "+13235550107", ["EYEBROW_SHAPING"], "DELETED"),
-        apt(0, "15:10", "Carlos Martinez", "+13235550105", ["HAIRCUT_BEARD_TRIM"], "CONFIRMED"),
-        apt(0, "16:25", "Camila Reyes", "+13235550109", ["WASHING"], "BOOKED", { notes: "Prueba de mechón la semana pasada." }),
+        apt(0, "15:30", "Carlos Martinez", "+13235550105", ["HAIRCUT_BEARD_TRIM"], "CONFIRMED"),
+        apt(0, "16:30", "Camila Reyes", "+13235550109", ["WASHING"], "BOOKED", { notes: "Prueba de mechón la semana pasada." }),
         apt(0, "17:00", "Jorge Flores", "+13235550108", ["HAIRCUT"], "CONFIRMED", { language: "EN" }),
-        apt(0, "18:00", "Miguel Sanchez (Walk-in)", "+13235550110", ["HAIRCUT_BEARD_TRIM_EYEBROW_SHAPING"], "BOOKED"),
+        apt(0, "18:00", "Miguel Sanchez (Walk-in)", "+13235550110", ["HAIRCUT_BEARD_TRIM"], "BOOKED"),
 
         // Tomorrow: 3 appointments
         apt(1, "10:00", "Isabella Moreno", "+13235550111", ["BLOW_DRYING"], "BOOKED"),
@@ -112,8 +122,8 @@ const USE_MOCKS = true;
     const FLAKY_ID = db.find(a => a.name === "Camila Reyes").appointmentId;
     let flakyAttempts = 0;
 
-    // Statuses that no longer hold their slot.
-    const INACTIVE = new Set(["CANCELED", "RESCHEDULED", "DELETED", "NO_SHOW"]);
+    // Statuses that no longer hold their slot (AppointmentService.NON_BLOCKING_STATUSES).
+    const INACTIVE = new Set(["CANCELED", "RESCHEDULED", "COMPLETED", "NO_SHOW", "DELETED"]);
 
     function conflictsFor(date, startTime, services, excludeId) {
         const start = toMinutes(startTime);
@@ -144,43 +154,29 @@ const USE_MOCKS = true;
 
         if (sessionExpired) return error(401, "TokenExpired", "Your session has expired.");
 
+        // List<AppointmentFullDetailsResponse>, every appointment of the day, unsorted
         if (method === "GET" && path === "/api/v1/admin/appointments/day") {
             const date = url.searchParams.get("date") ?? salonIso(0);
-            const page = Number(url.searchParams.get("page") ?? 0);
-            const size = Number(url.searchParams.get("size") ?? 7);
-            const all = db.filter(a => a.date === date).sort((a, b) => a.startTime.localeCompare(b.startTime));
-            const totalPages = Math.ceil(all.length / size);
-            const content = all.slice(page * size, page * size + size).map(a => ({
-                appointmentId: a.appointmentId,
-                phoneNumber: a.phoneNumber,
-                name: a.name,
-                serviceType: a.serviceType,
-                startTime: a.startTime,
-                status: a.status,
-                // Overlap flag the panel colors rows by (not in AppointmentRow yet)
-                overlapping: !INACTIVE.has(a.status)
-                    && conflictsFor(a.date, a.startTime, a.serviceType, a.appointmentId).length > 0
-            }));
-            return json(200, {
-                content, totalPages, totalElements: all.length, number: page, size,
-                first: page === 0, last: page >= totalPages - 1, empty: content.length === 0
-            });
+            const all = db.filter(a => a.date === date).map(a => structuredClone(a));
+            return json(200, all.reverse());
         }
 
-        // Both placeholder endpoints share /api/(placeholder), so they are told apart
-        // by body shape: create sends a name, the availability check does not.
-        if (method === "POST" && path === "/api/(placeholder)" && body && !("name" in body)) {
-            if (body.appointmentId === FLAKY_ID && ++flakyAttempts <= 2) {
+        // checkOverlaps -> List<AppointmentOverlapDetailsResponse>. Answered as POST:
+        // see the note on AVAILABILITY_URL in booking.js.
+        if (path === "/api/v1/admin/appointments/overlaps") {
+            if (body.excludeId === FLAKY_ID && ++flakyAttempts <= 2) {
                 return error(503, "MockError", "Mock failure for testing the retry.");
             }
-            const conflicts = conflictsFor(body.date, body.startTime, body.services, body.appointmentId)
-                .map(o => ({ appointmentId: o.appointmentId, services: o.serviceType }));
-            return json(200, { overlaps: conflicts.length > 0, conflicts });
+            const conflicts = conflictsFor(body.date, body.startTime, body.serviceTypes, body.excludeId)
+                .map(o => ({ id: o.appointmentId, name: o.name, serviceTypeList: o.serviceType }));
+            return json(200, conflicts);
         }
 
+        // Placeholder create endpoint (the backend has none yet)
         if (method === "POST" && path === "/api/(placeholder)") {
             if (/error/i.test(body.name)) return error(400, "MockError", "Mock failure for testing.");
-            const created = apt(0, body.startTime, body.name, "", body.services, "BOOKED", { smsConsent: false, hairImages: [] });
+            const created = apt(0, body.startTime, body.name, "", body.services, "BOOKED",
+                { smsConsent: false, hairImages: [], source: body.appointmentSource });
             created.date = body.date;
             db.push(created);
             return json(200, created);
@@ -202,17 +198,27 @@ const USE_MOCKS = true;
             const a = db.find(x => x.appointmentId === m[1]);
             if (!a) return error(404, "AppointmentNotFoundException", "Not found");
 
-            if (method === "GET") return json(200, a);
             if (method === "DELETE") {
                 a.status = "DELETED"; // soft delete, like AdminService.markForDeletion
                 return json(204);
             }
             if (method === "PATCH") {
-                // Reschedule-style edit: date, start time, services; end time recalculated.
+                // AppointmentFullDetailsRequest { services, date, startTime }; end time
+                // recalculated and business hours checked, like editAppointmentDetails.
+                const end = toMinutes(endTimeFor(body.startTime, body.services));
+                const [y, mo, d] = body.date.split("-").map(Number);
+                const day = new Date(y, mo - 1, d).getDay();
+                const closing = day === 0 ? 900 : 1140;
+                if (day === 1) return error(400, "SlotIsMondayException", "Selected date is Monday");
+                if (toMinutes(body.startTime) < 600 || toMinutes(body.startTime) >= closing) {
+                    return error(400, "OutsideServiceHoursException", "Selected time is outside of business hours");
+                }
+                if (end > closing) return error(400, "EndsAfterClosingException", "Appointment would end after closing time");
                 a.date = body.date;
                 a.startTime = `${body.startTime}:00`;
                 a.serviceType = body.services;
                 a.endTime = endTimeFor(body.startTime, body.services);
+                a.totalPrice = priceFor(body.services).toFixed(2);
                 return json(204);
             }
         }

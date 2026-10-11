@@ -23,26 +23,34 @@ python3 -m http.server 8080
 
 With mocks on, log in with `admin@yasminbeauty.salon` / `admin123` (anything else shows the error toast).
 
-- Today has 10 appointments (two pages), tomorrow 3, yesterday 4, every other day is empty.
-- Today's first page has every row state: an overlapping pair (Ana, Luis), a rescheduled (Valeria) and a deleted (Daniela) appointment.
+Layout is phone first: a day bar (previous day / tap for the calendar / next day) and a time, name, status list
+that fits a whole day on one phone screen. Tablets get the same layout with more room; desktop (1024px+) keeps
+the calendar open beside the list.
+
+- Today has 10 appointments, tomorrow 3, yesterday 4, every other day is empty.
+- Today has every row state: an overlapping pair (Ana, Luis), a rescheduled (Valeria) and a deleted (Daniela) appointment.
 - Only *Confirmada* appointments accept Completada / No asistió (others return 409).
+- Editing to a Monday, or past closing time, returns the backend's business-hours errors.
 - Camila Reyes' availability check fails twice, then succeeds: edit her and pick a time to see the auto-retry and the *Reintentar* button.
 - A new appointment whose name contains `error` fails. `panel-view.html?mock401` simulates an expired session.
 
 ## Endpoints
 
-From `AdminController` in the backend, under `/api/v1/admin`:
+From `AdminController` on the backend's `dev/build/mac` branch, under `/api/v1/admin`:
 
 | Used for | Request |
 |---|---|
 | Login | `POST /login` `{ email, password }` |
-| Day view | `GET /appointments/day?date=YYYY-MM-DD&page=0&size=7` (Spring `Page`) |
-| Detail | `GET /appointments/{id}` |
+| Day view | `GET /appointments/day?date=YYYY-MM-DD` → every appointment of the day as a full record (no paging) |
 | Completada / No asistió | `PATCH /appointments/{id}/status?action=COMPLETED\|NO_SHOW` |
-| Edit (reschedule) | `PATCH /appointments/{id}` `{ date, startTime, services }` |
+| Edit (reschedule) | `PATCH /appointments/{id}` `{ services, date, startTime }` |
 | Delete | `DELETE /appointments/{id}` |
-| Create | `/api/(placeholder)` `{ name, date, startTime, services }`: no admin create endpoint yet |
-| Availability check | `/api/(placeholder)` `{ date, startTime, services, appointmentId }` → `{ overlaps, conflicts: [{ appointmentId, services }] }` |
+| Overlap check | `/appointments/overlaps` `{ date, startTime, serviceTypes, excludeId }` → `[{ id, name, serviceTypeList }]` |
+| Create | `/api/(placeholder)` `{ name, date, startTime, services, appointmentSource }`: no admin create endpoint yet |
 
-Backend changes the panel expects: `AppointmentRow` needs an `overlapping` flag, `AppointmentFullDetailsResponse` needs
-`hairImages`, and the edit endpoint needs `@RequestBody` plus date/start time/services support.
+The detail modal reads from the day list, since there is no single-appointment endpoint. Row overlap colors are
+worked out from that list with the backend's own rule (`NON_BLOCKING_STATUSES`).
+
+Backend changes the panel needs: the overlap endpoint is `@GetMapping` with a `@RequestBody`, which browsers cannot
+send, so the panel calls it with `POST` (switch it to `@PostMapping`); `editAppointmentDetails` needs `@Transactional`
+(or a `save`) to persist edits; `hairImages` is not in `AppointmentFullDetailsResponse` yet.

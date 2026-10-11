@@ -31,32 +31,53 @@
   </header>
 
   <main class="panel-layout">
-    <section class="calendar-col" aria-labelledby="calendar-heading">
+    <section class="day-col" id="day-col" aria-labelledby="calendar-heading">
+      <!-- Phone and tablet: a day bar, with the calendar folded away until it is needed.
+           Desktop: the calendar is always open beside the list. -->
+      <div class="day-bar">
+        <!-- Arrow SVGs are flatpickr's month arrows, the ones on the public site's calendar -->
+        <button type="button" class="btn btn-icon" id="prev-day" aria-label="Día anterior">
+          <svg viewBox="0 0 17 17" width="16" height="16" aria-hidden="true">
+            <path d="M5.207 8.471l7.146 7.147-0.707 0.707-7.853-7.854 7.854-7.853 0.707 0.707-7.147 7.146z" />
+          </svg>
+        </button>
+        <button type="button" class="day-toggle" id="day-toggle" aria-expanded="false" aria-controls="calendar-wrapper">
+          <span class="day-toggle-text" id="day-label"></span>
+          <span class="day-toggle-hint">Cambiar día</span>
+        </button>
+        <button type="button" class="btn btn-icon" id="next-day" aria-label="Día siguiente">
+          <svg viewBox="0 0 17 17" width="16" height="16" aria-hidden="true">
+            <path d="M13.207 8.472l-7.854 7.854-0.707-0.707 7.146-7.146-7.146-7.148 0.707-0.707 7.854 7.854z" />
+          </svg>
+        </button>
+      </div>
+
       <!-- A heading rather than a <label>: flatpickr turns the input into type="hidden",
            which a label can no longer point at. -->
-      <h2 class="section-title" id="calendar-heading">Elige un día</h2>
-      <div class="calendar-wrapper">
+      <h2 class="section-title calendar-title" id="calendar-heading">Elige un día</h2>
+      <div class="calendar-wrapper" id="calendar-wrapper">
         <input type="text" id="panel-date" aria-labelledby="calendar-heading" autocomplete="off">
       </div>
     </section>
 
-    <section class="table-col" aria-labelledby="table-heading">
+    <section class="list-col" aria-labelledby="table-heading">
       <div class="table-toolbar">
         <div>
-          <h2 class="section-title" id="table-heading">Citas</h2>
+          <h2 class="section-title list-title" id="table-heading">Citas</h2>
           <p class="table-day" id="table-day" aria-live="polite"></p>
         </div>
-        <button type="button" class="btn btn-primary" id="add-btn">Agregar cita</button>
+        <button type="button" class="btn btn-primary btn-add" id="add-btn">
+          <span aria-hidden="true">+</span> Agregar<span class="btn-add-long"> cita</span>
+        </button>
       </div>
 
       <div class="table-area" id="table-area" aria-busy="false">
         <table class="apt-table" id="apt-table">
           <thead>
             <tr>
+              <th scope="col">Hora</th>
               <th scope="col">Nombre</th>
-              <th scope="col">Fecha</th>
-              <th scope="col">Hora de inicio</th>
-              <th scope="col">Servicios</th>
+              <th scope="col" class="col-date">Fecha</th>
               <th scope="col">Estado</th>
             </tr>
           </thead>
@@ -69,25 +90,9 @@
         </div>
       </div>
 
-      <div class="table-footer">
-        <p class="legend" aria-hidden="true">
-          <span class="legend-swatch legend-overlap"></span> Se cruza con otra cita
-        </p>
-        <nav class="pagination" aria-label="Páginas de citas">
-          <!-- Arrow SVGs are flatpickr's month arrows, the ones on the public site's calendar -->
-          <button type="button" class="btn btn-icon" id="prev-btn" aria-label="Página anterior">
-            <svg viewBox="0 0 17 17" width="16" height="16" aria-hidden="true">
-              <path d="M5.207 8.471l7.146 7.147-0.707 0.707-7.853-7.854 7.854-7.853 0.707 0.707-7.147 7.146z" />
-            </svg>
-          </button>
-          <span class="page-info" id="page-info" aria-live="polite">Página 1 de 1</span>
-          <button type="button" class="btn btn-icon" id="next-btn" aria-label="Página siguiente">
-            <svg viewBox="0 0 17 17" width="16" height="16" aria-hidden="true">
-              <path d="M13.207 8.472l-7.854 7.854-0.707-0.707 7.146-7.146-7.146-7.148 0.707-0.707 7.854 7.854z" />
-            </svg>
-          </button>
-        </nav>
-      </div>
+      <p class="legend" aria-hidden="true">
+        <span class="legend-swatch"></span> Se cruza con otra cita
+      </p>
     </section>
   </main>
 
@@ -181,13 +186,13 @@
           <fieldset class="booking-type">
             <legend>Tipo de reserva</legend>
             <div class="radio-row">
-              <!-- Values stay in English: they are appended to the name sent to the backend -->
+              <!-- Values are the backend's AppointmentSource enum names -->
               <label class="radio-option" for="type-phone">
-                <input type="radio" id="type-phone" name="bookingType" value="Phone" required>
+                <input type="radio" id="type-phone" name="bookingType" value="PHONE" required>
                 Por teléfono
               </label>
               <label class="radio-option" for="type-walkin">
-                <input type="radio" id="type-walkin" name="bookingType" value="Walk-in">
+                <input type="radio" id="type-walkin" name="bookingType" value="WALK_IN">
                 Sin cita
               </label>
             </div>

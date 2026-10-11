@@ -3,8 +3,10 @@
 // appointment modal and by edit mode, so neither duplicates this logic.
 // Loaded as a classic script before panel-view.js; everything here is global.
 
-// TODO: endpoint (availability / overlap check; the backend has no route for it yet)
-const AVAILABILITY_URL = `${API_BASE_URL}/api/(placeholder)`;
+// AdminController.checkOverlaps. NOTE: the backend maps it as @GetMapping with a
+// @RequestBody, and browsers cannot send a body with GET, so this is sent as POST.
+// The backend needs @PostMapping (or query params) for it to work outside the mocks.
+const AVAILABILITY_URL = `${API_BASE_URL}/api/v1/admin/appointments/overlaps`;
 
 // ---------------------------------------------------------------------------
 // Spanish formatting. es-US gives Spanish month/day names with 12 hour time.
@@ -31,6 +33,21 @@ const SERVICE_LABELS = {
     HAIRCUT_BEARD_TRIM: "Corte de Cabello + Recorte de Barba",
     HAIRCUT_BEARD_TRIM_EYEBROW_SHAPING: "Corte de Cabello + Recorte de Barba + Diseño de Cejas"
 };
+
+// Minutes per service, mirroring the backend's ServiceType enum.
+const SERVICE_MINUTES = {
+    HAIRCUT: 60, BABY_HIGHLIGHT: 240, DYES: 180, KERATIN_TREATMENT: 90, BLOW_DRYING: 60,
+    WASHING: 30, TREATMENT_MOISTURIZING: 90, HAIRCUT_BLOW_DRY: 90, COLOR_TOUCH_UP: 90,
+    PERM: 120, BEARD_TRIM: 30, EYEBROW_SHAPING: 30, HAIRCUT_BEARD_TRIM: 60,
+    HAIRCUT_BEARD_TRIM_EYEBROW_SHAPING: 90
+};
+
+// "HH:mm" + services -> "HH:mm:ss" end time, as the backend calculates it.
+function endTimeFor(startTime, services) {
+    const [h, m] = startTime.split(":").map(Number);
+    const total = h * 60 + m + services.reduce((sum, s) => sum + (SERVICE_MINUTES[s] ?? 0), 0);
+    return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}:00`;
+}
 
 function formatServices(services) {
     return (services ?? []).map(s => SERVICE_LABELS[s] ?? s).join(", ");
@@ -328,9 +345,9 @@ function createBookingFields(slot, {
         renderState("loading", "Revisando disponibilidad…");
 
         const { date, startTime, services: chosen } = values();
-        // appointmentId lets the backend leave the appointment being edited out of
-        // its own overlap check; it is null for a new appointment.
-        const body = { date, startTime, services: chosen, appointmentId: getAppointmentId() };
+        // AppointmentOverlapDetailsRequest. excludeId leaves the appointment being
+        // edited out of its own check; it is null for a new appointment.
+        const body = { date, startTime, serviceTypes: chosen, excludeId: getAppointmentId() };
 
         const attempts = autoRetry ? 2 : 1;
         for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -353,10 +370,10 @@ function createBookingFields(slot, {
         renderFailed();
     }
 
-    // Expected response: { overlaps: boolean, conflicts: [{ appointmentId, services: [...] }] }
-    function renderResult(result) {
-        const conflicts = result.conflicts ?? [];
-        if (!result.overlaps || conflicts.length === 0) {
+    // Response: List<AppointmentOverlapDetailsResponse> = [{ id, name, serviceTypeList }],
+    // empty when the slot is free.
+    function renderResult(conflicts) {
+        if (!Array.isArray(conflicts) || conflicts.length === 0) {
             renderState("ok", "Horario libre: no se cruza con ninguna otra cita.");
             return;
         }
@@ -365,12 +382,12 @@ function createBookingFields(slot, {
         list.className = "conflict-list";
         for (const c of conflicts) {
             const li = document.createElement("li");
-            const services = document.createElement("strong");
-            services.textContent = formatServices(c.services);
-            const id = document.createElement("span");
-            id.className = "conflict-id";
-            id.textContent = `Cita ${c.appointmentId}`;
-            li.append(services, id);
+            const name = document.createElement("strong");
+            name.textContent = c.name;
+            const services = document.createElement("span");
+            services.className = "conflict-services";
+            services.textContent = formatServices(c.serviceTypeList);
+            li.append(name, services);
             list.appendChild(li);
         }
         const note = document.createElement("p");
