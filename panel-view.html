@@ -169,10 +169,18 @@
   </dialog>
 
   <!-- IMAGE LIGHTBOX (opens on top of the detail modal) -->
-  <dialog class="modal lightbox" id="lightbox-dialog" aria-label="Foto de referencia">
+  <dialog class="modal lightbox" id="lightbox-dialog" aria-label="Fotos de referencia">
     <div class="lightbox-inner">
       <button type="button" class="modal-close" data-close aria-label="Cerrar foto">&times;</button>
-      <img id="lightbox-img" alt="Foto de referencia en grande">
+      <p class="lightbox-count" id="lightbox-count" aria-live="polite"></p>
+      <!-- Arrows: flatpickr's month arrows, as on the public site's calendar -->
+      <button type="button" class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="Foto anterior">
+        <svg viewBox="0 0 17 17" width="22" height="22" aria-hidden="true"><path d="M5.207 8.471l7.146 7.147-0.707 0.707-7.853-7.854 7.854-7.853 0.707 0.707-7.147 7.146z" /></svg>
+      </button>
+      <img id="lightbox-img" alt="">
+      <button type="button" class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="Foto siguiente">
+        <svg viewBox="0 0 17 17" width="22" height="22" aria-hidden="true"><path d="M13.207 8.472l-7.854 7.854-0.707-0.707 7.146-7.146-7.146-7.148 0.707-0.707 7.854 7.854z" /></svg>
+      </button>
     </div>
   </dialog>
 

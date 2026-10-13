@@ -866,7 +866,66 @@ body {
   background: rgba(246, 241, 232, 0.15);
 }
 
+.lightbox-count {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  margin: 0;
+  transform: translateX(-50%);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-light);
+}
+
+/* Side arrows over the photo, large enough to hit with a thumb */
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-top: 28px;
+  transform: translateY(-50%);
+  color: var(--color-light);
+  background: rgba(26, 19, 16, 0.6);
+  border: 1px solid rgba(246, 241, 232, 0.35);
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lightbox-nav svg {
+  fill: currentColor;
+}
+
+.lightbox-nav:hover {
+  background: rgba(26, 19, 16, 0.85);
+}
+
+.lightbox-nav:focus-visible {
+  outline: 3px solid var(--color-light);
+  outline-offset: 2px;
+}
+
+.lightbox-nav[hidden] {
+  display: none;
+}
+
+.lightbox-prev {
+  left: 10px;
+}
+
+.lightbox-next {
+  right: 10px;
+}
+
 #lightbox-img {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-drag: none;
   display: block;
   max-width: 100vw;
   max-height: calc(100dvh - 56px);
@@ -1387,13 +1446,22 @@ body {
     border-radius: var(--radius);
   }
 
+  /* Room on both sides so the arrows sit beside the photo, not on it */
   .lightbox-inner {
-    padding: 56px 16px 16px;
+    padding: 56px 72px 16px;
   }
 
   #lightbox-img {
-    max-width: calc(94vw - 32px);
+    max-width: calc(94vw - 144px);
     max-height: calc(94dvh - 72px);
+  }
+
+  .lightbox-prev {
+    left: 12px;
+  }
+
+  .lightbox-next {
+    right: 12px;
   }
 
   .toast {

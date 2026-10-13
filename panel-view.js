@@ -381,29 +381,92 @@ function phoneLink(number) {
     return link;
 }
 
-// hairImages is not in AppointmentFullDetailsResponse yet; this reads the entity's
-// HairImage shape ({ imageUrl, publicId }) once the backend adds it.
-function imageList(images) {
-    if (!images?.length) return "Ninguna";
+// ---------------------------------------------------------------------------
+// Reference photos
+// ---------------------------------------------------------------------------
+
+// Public image URLs of an appointment, whatever the day list names the field: the
+// entity's HairImage list ({ imageUrl, publicId }) or a plain list of URL strings.
+function imageUrls(a) {
+    const list = a.hairImages ?? a.hairImageUrls ?? a.imageUrls ?? a.images ?? [];
+    return list.map(i => typeof i === "string" ? i : i?.imageUrl ?? i?.url).filter(Boolean);
+}
+
+// Cloudinary resizes on the fly from the URL, so thumbnails and the large view ask
+// for just the size they show. Other URLs are used as they are.
+function cloudinarySized(url, transform) {
+    return /^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url)
+        ? url.replace("/image/upload/", `/image/upload/${transform}/`)
+        : url;
+}
+const thumbUrl = url => cloudinarySized(url, "c_fill,w_160,h_160,q_auto,f_auto");
+const largeUrl = url => cloudinarySized(url, "c_limit,w_1600,h_1600,q_auto,f_auto");
+
+function imageList(urls) {
+    if (!urls.length) return "Ninguna";
     const wrap = document.createElement("div");
     wrap.className = "thumbs";
-    images.forEach((img, i) => {
+    urls.forEach((url, i) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "thumb";
-        btn.setAttribute("aria-label", `Ver foto de referencia ${i + 1} en grande`);
+        btn.setAttribute("aria-label", `Ver foto de referencia ${i + 1} de ${urls.length} en grande`);
         const el = document.createElement("img");
-        el.src = img.imageUrl;
+        el.src = thumbUrl(url);
         el.alt = "";
+        el.loading = "lazy";
         btn.appendChild(el);
-        btn.addEventListener("click", () => {
-            lightboxImg.src = img.imageUrl;
-            lightbox.showModal();
-        });
+        btn.addEventListener("click", () => openLightbox(urls, i));
         wrap.appendChild(btn);
     });
     return wrap;
 }
+
+// Lightbox: one photo at a time, side arrows (and arrow keys or a swipe) cycle
+// through the appointment's photos, wrapping around at either end.
+const lightboxPrev = document.getElementById("lightbox-prev");
+const lightboxNext = document.getElementById("lightbox-next");
+const lightboxCount = document.getElementById("lightbox-count");
+const gallery = { urls: [], index: 0 };
+lightboxImg.draggable = false;
+
+function showPhoto(index) {
+    const n = gallery.urls.length;
+    gallery.index = (index + n) % n;
+    lightboxImg.src = largeUrl(gallery.urls[gallery.index]);
+    lightboxImg.alt = `Foto de referencia ${gallery.index + 1} de ${n}`;
+    lightboxCount.textContent = n > 1 ? `${gallery.index + 1} / ${n}` : "";
+    // Warm the neighbours so the next tap is instant.
+    if (n > 1) [1, -1].forEach(d => { new Image().src = largeUrl(gallery.urls[(gallery.index + d + n) % n]); });
+}
+
+function openLightbox(urls, index) {
+    gallery.urls = urls;
+    const many = urls.length > 1;
+    lightboxPrev.hidden = !many;
+    lightboxNext.hidden = !many;
+    showPhoto(index);
+    lightbox.showModal();
+}
+
+lightboxPrev.addEventListener("click", () => showPhoto(gallery.index - 1));
+lightboxNext.addEventListener("click", () => showPhoto(gallery.index + 1));
+
+lightbox.addEventListener("keydown", (e) => {
+    if (gallery.urls.length < 2) return;
+    if (e.key === "ArrowLeft") { e.preventDefault(); showPhoto(gallery.index - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); showPhoto(gallery.index + 1); }
+});
+
+// Swipe left/right on phones
+let swipeX = null;
+lightbox.addEventListener("pointerdown", (e) => { swipeX = e.pointerType === "mouse" ? null : e.clientX; });
+lightbox.addEventListener("pointerup", (e) => {
+    if (swipeX === null || gallery.urls.length < 2) return;
+    const dx = e.clientX - swipeX;
+    swipeX = null;
+    if (Math.abs(dx) > 40) showPhoto(gallery.index + (dx < 0 ? 1 : -1));
+});
 
 // Clicking the dark area around the photo also closes it (on phones the
 // lightbox fills the screen, so there is no backdrop to click).
@@ -430,7 +493,7 @@ function showReadMode() {
     addField(dl, "Teléfono", phoneLink(a.phoneNumber));
     addField(dl, "Origen", SOURCE_LABELS[a.appointmentSource] ?? a.appointmentSource);
     addField(dl, "Notas adicionales", a.additionalNotes, true);
-    addField(dl, "Fotos de referencia", imageList(a.hairImages), true);
+    addField(dl, "Fotos de referencia", imageList(imageUrls(a)), true);
     addField(dl, "Nombre", a.name);
     addField(dl, "Idioma", LANGUAGE_LABELS[a.language] ?? a.language);
     addField(dl, "Acepta SMS", a.smsConsent ? "Sí" : "No");

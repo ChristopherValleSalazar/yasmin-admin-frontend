@@ -77,4 +77,7 @@ edits always (the appointment came from that day), and new appointments only whe
 moves an appointment to another day closes it and says where it went; a new appointment for another day shows a note
 instead of a fetch.
 
-Still missing on the backend: `hairImages` in `AppointmentFullDetailsResponse`, so reference photos only show with the mocks.
+Reference photos come from the day list. The panel reads `hairImages` (`[{ imageUrl, publicId }]`, the entity's
+`HairImage`) or a plain list of URLs in `hairImageUrls` / `imageUrls` / `images`. Cloudinary URLs are resized from the
+URL itself: 160px thumbnails in the appointment, up to 1600px in the photo viewer, which cycles through the
+appointment's photos with the side arrows, the arrow keys or a swipe.
