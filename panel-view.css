@@ -983,14 +983,38 @@ body {
 .modal input[type="text"],
 .modal input[type="time"],
 .modal input[type="date"] {
+  display: block;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 44px;
   padding: 8px 12px;
   font: inherit;
+  /* 16px: iOS zooms the page into any field with smaller text, which then
+     scrolls sideways. */
+  font-size: 16px;
   color: var(--color-dark);
   background: var(--color-form);
   border: 2px solid var(--color-border);
   border-radius: 10px;
+}
+
+/* iOS WebKit gives date/time inputs a built-in minimum width that ignores width: 100%,
+   so they spill past the screen. Dropping the native box lets them shrink; tapping
+   still opens the iOS wheel picker. Limited to iOS (touch-callout) so desktop
+   browsers keep their own clock button. */
+@supports (-webkit-touch-callout: none) {
+  .modal input[type="time"],
+  .modal input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
+.modal input[type="time"]::-webkit-date-and-time-value,
+.modal input[type="date"]::-webkit-date-and-time-value {
+  min-height: 1.4em;
+  text-align: left;
 }
 
 .modal input::placeholder {
@@ -1456,7 +1480,7 @@ body {
 
   .date-time-row,
   .service-list {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .new-form .btn-block {
