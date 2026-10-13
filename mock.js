@@ -169,6 +169,8 @@ const USE_MOCKS = false;
                 : error(401, "BadCredentialsException", "Invalid email or password.");
         }
 
+        if (method === "POST" && path === "/api/v1/admin/logout") return json(204);
+
         if (sessionExpired) return error(401, "TokenExpired", "Your session has expired.");
 
         // AdminController.me, called by login.js to confirm the session before redirecting

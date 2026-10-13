@@ -9,6 +9,7 @@ const CREATE_URL = `${ADMIN_APPOINTMENTS}/create`;
 const statusUrl = (id, action) => `${ADMIN_APPOINTMENTS}/status/${encodeURIComponent(id)}?action=${action}`;
 const editUrl = id => `${ADMIN_APPOINTMENTS}/edit/${encodeURIComponent(id)}`;
 const deleteUrl = id => `${ADMIN_APPOINTMENTS}/delete/${encodeURIComponent(id)}`;
+const LOGOUT_URL = `${API_BASE_URL}/api/v1/admin/logout`;
 const NAME_SUFFIX = { PHONE: "Phone", WALK_IN: "Walk-in" };
 
 // ---------------------------------------------------------------------------
@@ -713,6 +714,27 @@ newForm.addEventListener("submit", async (e) => {
     } finally {
         newSubmit.disabled = false;
     }
+});
+
+// ---------------------------------------------------------------------------
+// Logout: AdminController.logout clears the HttpOnly cookie (only the server can).
+// ---------------------------------------------------------------------------
+
+const logoutBtn = document.getElementById("logout-btn");
+
+logoutBtn.addEventListener("click", async () => {
+    logoutBtn.disabled = true;
+    try {
+        const res = await fetch(LOGOUT_URL, { method: "POST", credentials: "include" });
+        if (res.ok) {
+            window.location.href = "login.html";
+            return;
+        }
+        showToast("No se pudo cerrar la sesión. Inténtalo de nuevo.");
+    } catch {
+        showToast(NETWORK_ERROR);
+    }
+    logoutBtn.disabled = false;
 });
 
 // ---------------------------------------------------------------------------

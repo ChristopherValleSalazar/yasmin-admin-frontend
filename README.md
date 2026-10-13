@@ -68,6 +68,7 @@ From `AdminController` on the backend's `dev/build/mac` branch, under `/api/v1/a
 | Edit (reschedule) | `PATCH /appointments/edit/{id}` `{ services, date, startTime }` |
 | Create | `POST /appointments/create` `{ appointmentSource, name, services, date, startTime }` → 201 |
 | Delete | `DELETE /appointments/delete/{id}` |
+| Logout | `POST /logout` (clears the cookie), from the "Cerrar sesión" button top right |
 
 The detail modal reads from the day list, since there is no single-appointment endpoint. Row overlap colors are
 worked out from that list with the backend's own rule (`NON_BLOCKING_STATUSES`).

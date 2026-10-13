@@ -58,6 +58,36 @@ body {
   background: var(--color-dark);
 }
 
+.btn-logout {
+  flex-shrink: 0;
+  min-height: 40px;
+  margin-left: auto;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-light);
+  background: transparent;
+  border: 1.5px solid color-mix(in srgb, var(--color-light) 55%, transparent);
+  border-radius: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-logout:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-light) 12%, transparent);
+}
+
+.btn-logout:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn-logout:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 .panel-logo {
   display: block;
   width: 170px;
