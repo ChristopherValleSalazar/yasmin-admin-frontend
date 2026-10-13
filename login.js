@@ -2,6 +2,7 @@
 // session is read or stored here.
 
 const LOGIN_URL = `${API_BASE_URL}/api/v1/admin/login`;
+const ME_URL = `${API_BASE_URL}/api/v1/admin/me`;
 const EMAIL_DEBOUNCE_MS = 1500;
 const TOAST_MS = 5000;
 
@@ -97,7 +98,18 @@ form.addEventListener("submit", async (e) => {
         });
 
         if (res.ok) {
-            window.location.href = "panel-view.html";
+            // Make sure the browser kept the session cookie before leaving the page;
+            // otherwise the panel's first request would bounce straight back here.
+            const me = await fetch(ME_URL, { credentials: "include" });
+            if (me.ok) {
+                window.location.href = "panel-view.html";
+                return;
+            }
+            console.warn(`[admin] Login answered OK but GET /me returned ${me.status}: the session cookie `
+                + `did not reach ${API_BASE_URL}. Page origin: ${location.origin}. Open the panel and the API `
+                + `on the same host (both localhost or both 127.0.0.1) and hard-reload (Cmd+Shift+R).`);
+            showToast("Iniciaste sesión, pero el navegador no guardó la sesión. Recarga la página por completo (Cmd+Shift+R) e inténtalo de nuevo.");
+            loginBtn.disabled = false;
             return;
         }
         // One generic message for every failure: never say which field was wrong.

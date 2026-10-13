@@ -171,6 +171,9 @@ const USE_MOCKS = false;
 
         if (sessionExpired) return error(401, "TokenExpired", "Your session has expired.");
 
+        // AdminController.me, called by login.js to confirm the session before redirecting
+        if (method === "GET" && path === "/api/v1/admin/me") return json(200, { name: "Yasmin" });
+
         // List<AppointmentFullDetailsResponse>, every appointment of the day, unsorted
         if (method === "GET" && path === "/api/v1/admin/appointments/day") {
             const date = url.searchParams.get("date") ?? salonIso(0);

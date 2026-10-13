@@ -52,7 +52,16 @@ async function api(url, { json, ...options } = {}) {
     if (res.status === 401) {
         if (!loggingOut) {
             loggingOut = true;
-            showToast("Tu sesión expiró y se cerró. Vuelve a iniciar sesión.");
+            // AdminJwtFilter answers { type: "TokenExpired" | "InvalidToken" } when a cookie
+            // arrived; an empty 401 means no session cookie reached the API at all.
+            const type = await res.clone().json().then(b => b.type, () => null);
+            if (type) {
+                showToast("Tu sesión expiró y se cerró. Vuelve a iniciar sesión.");
+            } else {
+                console.warn(`[admin] 401 with no session cookie from ${url}. Page origin: ${location.origin}, `
+                    + `API: ${API_BASE_URL}. They must be the same host (both localhost or both 127.0.0.1).`);
+                showToast("No se pudo verificar tu sesión. Inicia sesión de nuevo.");
+            }
             setTimeout(() => { window.location.href = "login.html"; }, 1800);
         }
         throw new SessionExpiredError();

@@ -13,15 +13,16 @@
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.min.css">
-  <link rel="stylesheet" href="palette.css">
-  <link rel="stylesheet" href="panel-view.css">
+  <!-- ?v= busts the browser cache after an update: bump it on every release. -->
+  <link rel="stylesheet" href="palette.css?v=20261013">
+  <link rel="stylesheet" href="panel-view.css?v=20261013">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-  <script src="config.js" defer></script>
-  <!-- Prototype only: delete this tag (and mock.js) to talk to the real backend. -->
-  <!-- <script src="mock.js" defer></script> -->
-  <script src="booking.js" defer></script>
-  <script src="panel-view.js" defer></script>
+  <script src="config.js?v=20261013" defer></script>
+  <!-- Mocks: uncomment here AND in login.html, and set USE_MOCKS = true in mock.js. -->
+  <!-- <script src="mock.js?v=20261013" defer></script> -->
+  <script src="booking.js?v=20261013" defer></script>
+  <script src="panel-view.js?v=20261013" defer></script>
 </head>
 
 <body>

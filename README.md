@@ -10,32 +10,39 @@ Private: it is not linked from the public site and every page carries `noindex, 
 | `booking.js` | Shared by the new appointment modal and edit mode: calendar setup, services list, start time, availability check. |
 | `palette.css` | The public site's `:root` colors, copied verbatim from `global-layout.css`. Update both together. |
 | `images/` | Logos and favicon copied from the public site. |
-| `config.js` | `API_BASE_URL`, same switch as the public site. |
-| `mock.js`, `mock-images/` | **Prototype only.** Fake API and reference photos. Remove the `mock.js` `<script>` tag from both pages (and these files) to use the real backend. |
+| `config.js` | `API_BASE_URL`: on localhost / 127.0.0.1 it is the same host on port 8080, anywhere else production. |
+| `mock.js`, `mock-images/` | Fake API and reference photos for UI work without a backend. Off by default. |
 
 ## Running it against the local backend
 
-The panel talks to the backend's `dev/build/mac` branch at `http://localhost:8080` (`config.js`; the production URL
-is the commented line).
+The panel talks to the backend's `dev/build/mac` branch on port 8080 of **the same host the page is on**
+(`config.js`), so `http://localhost:5500` uses `http://localhost:8080` and `http://127.0.0.1:5500` uses
+`http://127.0.0.1:8080`. That keeps the `SameSite=Lax` login cookie same-site; nothing needs editing.
 
 1. Start the backend on port 8080.
-2. Serve this folder from **localhost** and open `login.html`:
-
-   ```sh
-   python3 -m http.server 5500
-   ```
-
-3. Add that exact origin to the backend's `APP.CORS.ALLOWED.ORIGINS`, e.g. `http://localhost:5500`.
-   `localhost` and `127.0.0.1` are different origins, so open the panel with the same host you listed.
-4. Use Chrome or Firefox. The login cookie is `Secure` + `SameSite=Lax`; those browsers accept it on
-   `http://localhost`, Safari does not.
+2. Serve this folder and open `login.html`, e.g. `python3 -m http.server 5500` or VS Code Live Server.
+3. Add the page's exact origin to the backend's `APP.CORS.ALLOWED.ORIGINS`, e.g. `http://localhost:5500`
+   (and `http://127.0.0.1:5500` if you also open it that way).
+4. Use Chrome or Firefox. The login cookie is `Secure`; those browsers accept it on `http://localhost`, Safari does not.
 
 The session lasts 20 minutes; after that any request returns 401 and the panel sends you back to the login page.
 
+### Logged out right after logging in?
+
+That means the session cookie did not reach the API. The login page now checks `GET /me` before leaving and says so
+instead of bouncing you around.
+
+- Hard-reload once (Cmd+Shift+R), or tick "Disable cache" in DevTools → Network. Script URLs carry `?v=`, so bump
+  that version in both HTML files on every release.
+- In the console, the `[admin] API:` line shows which backend the page uses; it must be the same host as the page.
+- In DevTools → Network, open the `login` request: a yellow warning next to `Set-Cookie` says why Chrome dropped it.
+- Make sure the mocks are off on **both** pages (see below): a mocked login never sets a real cookie.
+
 ## Working on the UI without a backend
 
-Set `const USE_MOCKS = true;` at the top of `mock.js`. It then answers every call with the same routes and shapes
-as the backend. Log in with `admin@yasminbeauty.salon` / `admin123` (anything else shows the error toast).
+Uncomment the `mock.js` `<script>` tag in **both** `login.html` and `panel-view.html`, and set
+`const USE_MOCKS = true;` at the top of `mock.js`. It then answers every call with the same routes and shapes as the
+backend. Log in with `admin@yasminbeauty.salon` / `admin123` (anything else shows the error toast).
 
 Layout is phone first: a day bar (previous day / tap for the calendar / next day) and a time, name, status list
 that fits a whole day on one phone screen. Tablets get the same layout with more room; desktop (1024px+) keeps
@@ -54,7 +61,7 @@ From `AdminController` on the backend's `dev/build/mac` branch, under `/api/v1/a
 
 | Used for | Request |
 |---|---|
-| Login | `POST /login` `{ email, password }` |
+| Login | `POST /login` `{ email, password }`, then `GET /me` to confirm the cookie stuck |
 | Day view | `GET /appointments/day?date=YYYY-MM-DD` → every appointment of the day as a full record |
 | Completada / No asistió | `PATCH /appointments/status/{id}?action=COMPLETED\|NO_SHOW` |
 | Overlap check | `POST /appointments/overlaps` `{ date, startTime, serviceTypes, excludeId }` → `[{ id, name, serviceTypeList }]` |
