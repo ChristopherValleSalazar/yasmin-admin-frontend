@@ -312,7 +312,12 @@
 
   <!-- popover puts the toast in the top layer, above any open <dialog> -->
   <div id="toast" class="toast" popover="manual" role="alert">
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+    <!-- Checkmark (success) and alert circle (error), both from the public site's modals -->
+    <svg class="toast-icon-success" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+      stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M20 6L9 17l-5-5"></path>
+    </svg>
+    <svg class="toast-icon-error" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="9"></circle>
       <line x1="12" y1="7.5" x2="12" y2="13"></line>

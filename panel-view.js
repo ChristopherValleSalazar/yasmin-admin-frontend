@@ -2,10 +2,13 @@
 // front desk "new appointment" form. Every request goes through api() below.
 // Calendar, services, start time and the availability check live in booking.js.
 
-const DAY_URL = `${API_BASE_URL}/api/v1/admin/appointments/day`;
-const appointmentUrl = id => `${API_BASE_URL}/api/v1/admin/appointments/${encodeURIComponent(id)}`;
-// TODO: endpoint (the backend has no admin create endpoint yet)
-const CREATE_URL = `${API_BASE_URL}/api/(placeholder)`;
+// AdminController routes (backend dev/build/mac)
+const ADMIN_APPOINTMENTS = `${API_BASE_URL}/api/v1/admin/appointments`;
+const DAY_URL = `${ADMIN_APPOINTMENTS}/day`;
+const CREATE_URL = `${ADMIN_APPOINTMENTS}/create`;
+const statusUrl = (id, action) => `${ADMIN_APPOINTMENTS}/status/${encodeURIComponent(id)}?action=${action}`;
+const editUrl = id => `${ADMIN_APPOINTMENTS}/edit/${encodeURIComponent(id)}`;
+const deleteUrl = id => `${ADMIN_APPOINTMENTS}/delete/${encodeURIComponent(id)}`;
 const NAME_SUFFIX = { PHONE: "Phone", WALK_IN: "Walk-in" };
 
 // ---------------------------------------------------------------------------
@@ -16,9 +19,11 @@ const toast = document.getElementById("toast");
 const toastText = document.getElementById("toast-text");
 let toastTimer;
 
-function showToast(message) {
+// kind "error" (default) or "success" for confirmations such as a moved appointment.
+function showToast(message, kind = "error") {
     clearTimeout(toastTimer);
     toastText.textContent = message;
+    toast.classList.toggle("is-success", kind === "success");
     // Re-showing moves it to the top of the top layer, above whichever dialog is open.
     if (toast.matches(":popover-open")) toast.hidePopover();
     toast.showPopover();
@@ -182,6 +187,10 @@ async function loadDay() {
         if (seq === loadSeq) tableArea.setAttribute("aria-busy", "false");
     }
 }
+
+// "martes 14 de octubre"
+const dayName = iso => isoToLocalDate(iso)
+    .toLocaleDateString(LOCALE, { weekday: "long", day: "numeric", month: "long" });
 
 function renderDayHeading() {
     dayLabel.textContent = capitalize(isoToLocalDate(state.date)
@@ -443,12 +452,12 @@ readLeft.addEventListener("click", async (e) => {
     setDetailBusy(true);
     try {
         // The backend reads the action as a request param, not a body.
-        const res = await api(`${appointmentUrl(current.appointmentId)}/status?action=${action}`, { method: "PATCH" });
+        const res = await api(statusUrl(current.appointmentId, action), { method: "PATCH" });
         if (res.ok) {
             detailDialog.close();
             loadDay();
         } else if (res.status === 409) {
-            showToast(`No se puede marcar como "${STATUS_LABELS[action]}": solo las citas confirmadas pueden cambiar a ese estado.`);
+            showToast(`No se puede marcar como "${STATUS_LABELS[action]}": solo las citas reservadas o confirmadas pueden cambiar a ese estado.`);
         } else {
             showToast("No se pudo cambiar el estado. Inténtalo de nuevo.");
         }
@@ -478,7 +487,7 @@ confirmYes.addEventListener("click", async () => {
     confirmYes.disabled = true;
     setDetailBusy(true);
     try {
-        const res = await api(appointmentUrl(current.appointmentId), { method: "DELETE" });
+        const res = await api(deleteUrl(current.appointmentId), { method: "DELETE" });
         confirmDialog.close();
         if (res.ok) {
             detailDialog.close();
@@ -539,19 +548,20 @@ editForm.addEventListener("submit", async (e) => {
     // recalculates the end time.
     setDetailBusy(true);
     try {
-        const res = await api(appointmentUrl(current.appointmentId), {
-            method: "PATCH",
-            json: { date, startTime, services }
-        });
+        const id = current.appointmentId;
+        const res = await api(editUrl(id), { method: "PATCH", json: { date, startTime, services } });
         if (res.ok) {
-            // The read view updates right away; the end time uses the same service
-            // durations as the backend. The list reload brings the stored record.
-            current = {
-                ...current, date, startTime: `${startTime}:00`, serviceType: services,
-                endTime: endTimeFor(startTime, services)
-            };
-            showReadMode();
-            loadDay();
+            // The appointment was on the selected day, so that day always changes.
+            if (date === state.date) {
+                // Still on this day: show the stored record (backend end time and price).
+                await loadDay();
+                current = state.rows.find(r => r.appointmentId === id) ?? current;
+                showReadMode();
+            } else {
+                detailDialog.close();
+                loadDay();
+                showToast(`Cita movida al ${dayName(date)}.`, "success");
+            }
         } else {
             const detail = await errorText(res);
             showDetailError(`No se pudieron guardar los cambios.${detail ? ` ${detail}` : ""} Tus cambios siguen aquí.`);
@@ -611,17 +621,18 @@ newForm.addEventListener("submit", async (e) => {
 
     newSubmit.disabled = true;
     try {
+        // AppointmentCreateAdminRequest. Answers 201 with no body.
         const res = await api(CREATE_URL, {
             method: "POST",
-            // Name suffix as the original spec asked; appointmentSource matches the
-            // backend's new AppointmentSource enum for when a create endpoint exists.
-            json: { name: `${name} (${NAME_SUFFIX[source]})`, date, startTime, services, appointmentSource: source }
+            json: { appointmentSource: source, name: `${name} (${NAME_SUFFIX[source]})`, services, date, startTime }
         });
         if (res.ok) {
             newDialog.close();
             newForm.reset();
             newFields.set();
-            loadDay(); // the panel's selected day, not the new appointment's
+            // Only the selected day needs a new fetch; another day just gets a note.
+            if (date === state.date) loadDay();
+            else showToast(`Cita agregada para el ${dayName(date)}.`, "success");
         } else {
             const detail = await errorText(res);
             showNewError(`No se pudo agregar la cita.${detail ? ` ${detail}` : ""} Revisa los datos e inténtalo de nuevo.`);

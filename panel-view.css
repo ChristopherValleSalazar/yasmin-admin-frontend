@@ -106,13 +106,13 @@ body {
 /* DAY BAR: previous day / tap to open the calendar / next day */
 .day-bar {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .day-bar .btn-icon {
-  width: 44px;
+  width: 42px;
   min-height: 44px;
 }
 
@@ -136,7 +136,9 @@ body {
 
 .day-toggle-text {
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.35rem;
+  /* scales down on narrow phones so "Miércoles, 14 de octubre" stays on one line */
+  font-size: clamp(1.1rem, 5.4vw, 1.35rem);
+  text-wrap: balance;
   font-weight: 700;
   line-height: 1.2;
   text-align: center;
@@ -1197,6 +1199,21 @@ body {
 
 .toast svg {
   flex-shrink: 0;
+}
+
+.toast .toast-icon-success,
+.toast.is-success .toast-icon-error {
+  display: none;
+}
+
+.toast.is-success .toast-icon-success {
+  display: block;
+}
+
+.toast.is-success {
+  color: var(--color-success-text);
+  background: color-mix(in srgb, var(--color-logo-butterfly-body) 14%, var(--color-light));
+  border-color: var(--color-logo-butterfly-body);
 }
 
 /* TABLET (700px+): roomier, still one column with the folding calendar */

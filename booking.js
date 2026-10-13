@@ -3,9 +3,7 @@
 // appointment modal and by edit mode, so neither duplicates this logic.
 // Loaded as a classic script before panel-view.js; everything here is global.
 
-// AdminController.checkOverlaps. NOTE: the backend maps it as @GetMapping with a
-// @RequestBody, and browsers cannot send a body with GET, so this is sent as POST.
-// The backend needs @PostMapping (or query params) for it to work outside the mocks.
+// AdminController.checkOverlaps (POST)
 const AVAILABILITY_URL = `${API_BASE_URL}/api/v1/admin/appointments/overlaps`;
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,8 @@
-// PROTOTYPE MOCKS: the real backend is not reachable yet, so this file answers
-// every API call the admin pages make. To go live, delete the <script src="mock.js">
-// tag from login.html and panel-view.html (or set USE_MOCKS to false) and delete
-// this file and mock-images/. Nothing else depends on them.
+// MOCKS, currently OFF: the panel talks to the real backend. Set USE_MOCKS to true to
+// work on the UI without a backend; this file then answers every API call the admin
+// pages make, with the same routes and shapes as the backend's dev/build/mac branch.
+// To remove it for good, delete the <script src="mock.js"> tags from login.html and
+// panel-view.html, this file and mock-images/. Nothing else depends on them.
 //
 // Test hooks:
 //   login        admin@yasminbeauty.salon / admin123 succeeds, anything else is a 401
@@ -10,15 +11,15 @@
 //                every other day is empty
 //   row states   today has an overlapping pair (Ana + Luis), one rescheduled
 //                (Valeria) and one deleted (Daniela) appointment
-//   status       only CONFIRMED appointments accept Completada / No asistió (else 409),
+//   status       only BOOKED or CONFIRMED appointments accept Completada / No asistió (else 409),
 //                same rule as AdminService.setAppointmentStatus
 //   check        Camila Reyes' availability check fails twice, then succeeds:
 //                edit her, pick a time, watch the auto-retry, then press Reintentar
-//   edit         a Monday or a slot past closing returns a 400, like validateBusinessHours
-//   create       a name containing "error" returns a 400
+//   edit/create  a Monday or a slot past closing returns a 400, like validateBusinessHours;
+//                a new appointment whose name contains "error" also returns a 400
 //   401          open panel-view.html?mock401 to see the session expiry redirect
 
-const USE_MOCKS = true;
+const USE_MOCKS = false;
 
 (() => {
     if (!USE_MOCKS) return;
@@ -143,6 +144,22 @@ const USE_MOCKS = true;
         return json(status, { type, error: message });
     }
 
+    // Same checks as AppointmentService.validateBusinessHours; null when the slot is fine.
+    function businessHoursError(date, startTime, services) {
+        const [y, mo, d] = date.split("-").map(Number);
+        const day = new Date(y, mo - 1, d).getDay();
+        const closing = day === 0 ? 900 : 1140;
+        const start = toMinutes(startTime);
+        if (day === 1) return error(400, "SlotIsMondayException", "Selected date is Monday");
+        if (start < 600 || start >= closing) {
+            return error(400, "OutsideServiceHoursException", "Selected time is outside of business hours");
+        }
+        if (toMinutes(endTimeFor(startTime, services)) > closing) {
+            return error(400, "EndsAfterClosingException", "Appointment would end after closing time");
+        }
+        return null;
+    }
+
     function route(method, url, body) {
         const path = url.pathname;
 
@@ -172,55 +189,49 @@ const USE_MOCKS = true;
             return json(200, conflicts);
         }
 
-        // Placeholder create endpoint (the backend has none yet)
-        if (method === "POST" && path === "/api/(placeholder)") {
+        // createAppointment: business hours checked, 201 with no body
+        if (method === "POST" && path === "/api/v1/admin/appointments/create") {
             if (/error/i.test(body.name)) return error(400, "MockError", "Mock failure for testing.");
-            const created = apt(0, body.startTime, body.name, "", body.services, "BOOKED",
+            const invalid = businessHoursError(body.date, body.startTime, body.services);
+            if (invalid) return invalid;
+            const created = apt(0, body.startTime, body.name, null, body.services, "BOOKED",
                 { smsConsent: false, hairImages: [], source: body.appointmentSource });
             created.date = body.date;
             db.push(created);
-            return json(200, created);
+            return json(201);
         }
 
-        let m = path.match(/^\/api\/v1\/admin\/appointments\/([^/]+)\/status$/);
-        if (m && method === "PATCH") {
-            const a = db.find(x => x.appointmentId === m[1]);
-            if (!a) return error(404, "AppointmentNotFoundException", "Not found");
-            if (a.status !== "CONFIRMED") {
+        let m = path.match(/^\/api\/v1\/admin\/appointments\/(status|edit|delete)\/([^/]+)$/);
+        if (!m) return null;
+        const [, op, id] = m;
+        const a = db.find(x => x.appointmentId === id);
+        if (!a) return error(404, "AppointmentNotFoundException", "Not found");
+
+        if (op === "status" && method === "PATCH") {
+            // AdminService.ACTIONABLE: BOOKED or CONFIRMED
+            if (a.status !== "CONFIRMED" && a.status !== "BOOKED") {
                 return error(409, "InvalidStatusTransitionException", `Appointment ${a.appointmentId} is ${a.status}`);
             }
             a.status = url.searchParams.get("action");
             return json(204);
         }
 
-        m = path.match(/^\/api\/v1\/admin\/appointments\/([^/]+)$/);
-        if (m) {
-            const a = db.find(x => x.appointmentId === m[1]);
-            if (!a) return error(404, "AppointmentNotFoundException", "Not found");
+        if (op === "delete" && method === "DELETE") {
+            a.status = "DELETED"; // soft delete, like AdminService.markForDeletion
+            return json(204);
+        }
 
-            if (method === "DELETE") {
-                a.status = "DELETED"; // soft delete, like AdminService.markForDeletion
-                return json(204);
-            }
-            if (method === "PATCH") {
-                // AppointmentFullDetailsRequest { services, date, startTime }; end time
-                // recalculated and business hours checked, like editAppointmentDetails.
-                const end = toMinutes(endTimeFor(body.startTime, body.services));
-                const [y, mo, d] = body.date.split("-").map(Number);
-                const day = new Date(y, mo - 1, d).getDay();
-                const closing = day === 0 ? 900 : 1140;
-                if (day === 1) return error(400, "SlotIsMondayException", "Selected date is Monday");
-                if (toMinutes(body.startTime) < 600 || toMinutes(body.startTime) >= closing) {
-                    return error(400, "OutsideServiceHoursException", "Selected time is outside of business hours");
-                }
-                if (end > closing) return error(400, "EndsAfterClosingException", "Appointment would end after closing time");
-                a.date = body.date;
-                a.startTime = `${body.startTime}:00`;
-                a.serviceType = body.services;
-                a.endTime = endTimeFor(body.startTime, body.services);
-                a.totalPrice = priceFor(body.services).toFixed(2);
-                return json(204);
-            }
+        if (op === "edit" && method === "PATCH") {
+            // AppointmentFullDetailsRequest { services, date, startTime }; end time
+            // recalculated and business hours checked, like editAppointmentDetails.
+            const invalid = businessHoursError(body.date, body.startTime, body.services);
+            if (invalid) return invalid;
+            a.date = body.date;
+            a.startTime = `${body.startTime}:00`;
+            a.serviceType = body.services;
+            a.endTime = endTimeFor(body.startTime, body.services);
+            a.totalPrice = priceFor(body.services).toFixed(2);
+            return json(204);
         }
 
         return null;
