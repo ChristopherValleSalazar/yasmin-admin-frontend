@@ -89,8 +89,8 @@ const USE_MOCKS = false;
             totalPrice: priceFor(services).toFixed(2),
             additionalNotes: extra.notes ?? "",
             smsConsent: extra.smsConsent ?? true,
-            // Not in AppointmentFullDetailsResponse yet; mirrors the entity's HairImage.
-            hairImages: extra.hairImages ?? nextPhotos()
+            // AppointmentFullDetailsResponse.imageUrl: List<String> of public URLs
+            imageUrl: (extra.hairImages ?? nextPhotos()).map(p => p.imageUrl)
         };
     }
 

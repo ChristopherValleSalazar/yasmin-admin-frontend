@@ -385,11 +385,10 @@ function phoneLink(number) {
 // Reference photos
 // ---------------------------------------------------------------------------
 
-// Public image URLs of an appointment, whatever the day list names the field: the
-// entity's HairImage list ({ imageUrl, publicId }) or a plain list of URL strings.
+// Public image URLs of an appointment: AppointmentFullDetailsResponse.imageUrl,
+// a List<String> built from the appointment's HairImages.
 function imageUrls(a) {
-    const list = a.hairImages ?? a.hairImageUrls ?? a.imageUrls ?? a.images ?? [];
-    return list.map(i => typeof i === "string" ? i : i?.imageUrl ?? i?.url).filter(Boolean);
+    return (a.imageUrl ?? []).filter(Boolean);
 }
 
 // Cloudinary resizes on the fly from the URL, so thumbnails and the large view ask
